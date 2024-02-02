@@ -1,0 +1,718 @@
+Project Staan {
+	database_type: 'sqlite3'
+	note: '''
+	# Staan Database
+	'''
+}
+
+Table LogEntry {
+  id auto [pk, unique]
+  action_time date_time [default:`django.utils.timezone.now()`]
+  user foreign_key 
+  content_type foreign_key [null]
+  object_id text [null]
+  object_repr char 
+  action_flag positive_small_integer 
+  change_message text 
+  Note: '''LogEntry(id, action_time, user, content_type, object_id, object_repr, action_flag, change_message)'''
+}
+ref: LogEntry.user > User.id
+ref: LogEntry.content_type > ContentType.id
+
+
+Table Permission {
+  id auto [pk, unique]
+  name char 
+  content_type foreign_key 
+  codename char 
+  Note: '''
+    The permissions system provides a way to assign permissions to specific
+    users and groups of users.
+
+    The permission system is used by the Django admin site, but may also be
+    useful in your own code. The Django admin site uses permissions as follows:
+
+        - The "add" permission limits the user's ability to view the "add" form
+          and add an object.
+        - The "change" permission limits a user's ability to view the change
+          list, view the "change" form and change an object.
+        - The "delete" permission limits the ability to delete an object.
+        - The "view" permission limits the ability to view an object.
+
+    Permissions are set globally per type of object, not per specific object
+    instance. It is possible to say "Mary may change news stories," but it's
+    not currently possible to say "Mary may change news stories, but only the
+    ones she created herself" or "Mary may only change news stories that have a
+    certain status or publication date."
+
+    The permissions listed above are automatically created for each model.
+    '''
+}
+ref: Permission.content_type > ContentType.id
+
+
+Table Group {
+  id auto [pk, unique]
+  name char [unique]
+  Note: '''
+    Groups are a generic way of categorizing users to apply permissions, or
+    some other label, to those users. A user can belong to any number of
+    groups.
+
+    A user in a group automatically has all the permissions granted to that
+    group. For example, if the group 'Site editors' has the permission
+    can_edit_home_page, any user in that group will have that permission.
+
+    Beyond permissions, groups are a convenient way to categorize users to
+    apply some label, or extended functionality, to them. For example, you
+    could create a group 'Special users', and you could write code that would
+    do special things to those users -- such as giving them access to a
+    members-only portion of your site, or sending them members-only email
+    messages.
+    '''
+}
+
+
+Table auth_group_permissions {
+  permission_id auto [pk]
+  group_id auto [pk]
+}
+ref: Group.id > auth_group_permissions.group_id
+ref: Permission.id > auth_group_permissions.permission_id
+
+
+Table User {
+  id auto [pk, unique]
+  password char
+  last_login date_time [null]
+  is_superuser boolean [note:"Designates that this user has all permissions without explicitly assigning them.", default:`False`]
+  username char [note:"Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.", unique]
+  first_name char
+  last_name char
+  email email
+  is_staff boolean [note:"Designates whether the user can log into this admin site.", default:`False`]
+  is_active boolean [note:"Designates whether this user should be treated as active. Unselect this instead of deleting accounts.", default:`True`]
+  date_joined date_time [default:`django.utils.timezone.now()`]
+  Note: '''
+    Users within the Django authentication system are represented by this
+    model.
+
+    Username and password are required. Other fields are optional.
+    '''
+}
+
+
+Table auth_user_groups {
+  group_id auto [pk]
+  user_id auto [pk]
+}
+ref: User.id > auth_user_groups.user_id
+ref: Group.id > auth_user_groups.group_id
+
+
+Table auth_user_user_permissions {
+  permission_id auto [pk]
+  user_id auto [pk]
+}
+ref: User.id > auth_user_user_permissions.user_id
+ref: Permission.id > auth_user_user_permissions.permission_id
+
+
+Table ContentType {
+  id auto [pk, unique]
+  app_label char
+  model char
+  Note: '''ContentType(id, app_label, model)'''
+}
+
+
+Table Session {
+  session_key char [pk, unique]
+  session_data text
+  expire_date date_time
+  Note: '''
+    Django provides full support for anonymous sessions. The session
+    framework lets you store and retrieve arbitrary data on a
+    per-site-visitor basis. It stores data on the server side and
+    abstracts the sending and receiving of cookies. Cookies contain a
+    session ID -- not the data itself.
+
+    The Django sessions framework is entirely cookie-based. It does
+    not fall back to putting session IDs in URLs. This is an intentional
+    design decision. Not only does that behavior make URLs ugly, it makes
+    your site vulnerable to session-ID theft via the "Referer" header.
+
+    For complete documentation on using Sessions in your code, consult
+    the sessions documentation that is shipped with Django (also available
+    on the Django web site).
+    '''
+}
+
+
+Table Conferencedata {
+  id big_auto [pk, unique]
+  Name char
+  incharge foreign_key [null]
+  startDate date [null]
+  endDate date [null]
+  Status boolean [default:`True`]
+  createdBy foreign_key [null]
+  Note: '''Conferencedata(id, Name, incharge, startDate, endDate, Status, createdBy)'''
+}
+ref: Conferencedata.incharge > User.id
+ref: Conferencedata.createdBy > User.id
+
+
+Table product {
+  id big_auto [pk, unique]
+  Name char
+  Note: '''product(id, Name)'''
+}
+
+
+Table enquiryDatas {
+  id big_auto [pk, unique]
+  Name char
+  OrganizationName char
+  Email email
+  profile_image image [null]
+  alternateMobileNumber char [null]
+  status char
+  MobileNumber char
+  Location char
+  message char
+  conferencedata foreign_key [null]
+  salesPerson foreign_key [null]
+  Remarks text [null]
+  followup date [null]
+  Note: '''enquiryDatas(id, Name, OrganizationName, Email, profile_image, alternateMobileNumber, status, MobileNumber, Location, message, conferencedata, salesPerson, Remarks, followup)'''
+}
+ref: enquiryDatas.conferencedata > Conferencedata.id
+ref: enquiryDatas.salesPerson > User.id
+
+
+Table EnquriFromapi_enquirydatas_Interesteds {
+  product_id auto [pk]
+  enquirydatas_id auto [pk]
+}
+ref: enquiryDatas.id > EnquriFromapi_enquirydatas_Interesteds.enquirydatas_id
+ref: product.id > EnquriFromapi_enquirydatas_Interesteds.product_id
+
+
+Table EditListView {
+  id big_auto [pk, unique]
+  viewName char
+  visibleTo char [default:`1`]
+  filiterConditions j_s_o_n [null]
+  ColoumnToDisplay j_s_o_n [null]
+  isDefault boolean [default:`True`]
+  Table char
+  createdDate date
+  createdby foreign_key
+  Note: '''EditListView(id, viewName, visibleTo, filiterConditions, ColoumnToDisplay, isDefault, Table, createdDate, createdby)'''
+}
+ref: EditListView.createdby > User.id
+
+
+Table itemmaster_editlistview_visibleTouser {
+  user_id auto [pk]
+  editlistview_id auto [pk]
+}
+ref: EditListView.id > itemmaster_editlistview_visibleTouser.editlistview_id
+ref: User.id > itemmaster_editlistview_visibleTouser.user_id
+
+
+Table Hsn {
+  id big_auto [pk, unique]
+  hsn_type char [default:`1`]
+  hsn_code integer [unique]
+  Description text
+  gst_rate integer [null]
+  cess_rate integer [null]
+  created_at date
+  rcm boolean [default:`0`]
+  itc boolean [default:`1`]
+  modified_by foreign_key [null]
+  Note: '''Hsn(id, hsn_type, hsn_code, Description, gst_rate, cess_rate, created_at, rcm, itc, modified_by)'''
+}
+ref: Hsn.modified_by > User.id
+
+
+Table Item_Groups_Name {
+  id big_auto [pk, unique]
+  name char
+  Parent_Group char [null]
+  hsn foreign_key [null]
+  modified_by foreign_key [null]
+  Note: '''Item_Groups_Name(id, name, Parent_Group, hsn, modified_by)'''
+}
+ref: Item_Groups_Name.hsn > Hsn.id
+ref: Item_Groups_Name.modified_by > User.id
+
+
+Table UOM {
+  id big_auto [pk, unique]
+  name char
+  e_way_bill_uom char [null]
+  Description text [null]
+  modified_by foreign_key [null]
+  Note: '''UOM(id, name, e_way_bill_uom, Description, modified_by)'''
+}
+ref: UOM.modified_by > User.id
+
+
+Table Category {
+  id big_auto [pk, unique]
+  name char [unique]
+  Note: '''Category(id, name)'''
+}
+
+
+Table AccountsGroup {
+  id big_auto [pk, unique]
+  Accounts_Group_Name char [unique]
+  Accounts_Type char
+  Group_Active boolean [default:`True`]
+  modified_by foreign_key [null]
+  Note: '''AccountsGroup(id, Accounts_Group_Name, Accounts_Type, Group_Active, modified_by)'''
+}
+ref: AccountsGroup.modified_by > User.id
+
+
+Table AccountsMaster {
+  id big_auto [pk, unique]
+  Accounts_Name char [unique]
+  Accounts_Group_Name foreign_key [null]
+  AccountType char
+  Accounts_Active boolean [default:`True`]
+  GST_Applicable boolean [default:`False`]
+  TDS boolean [default:`False`]
+  modified_by foreign_key [null]
+  Note: '''AccountsMaster(id, Accounts_Name, Accounts_Group_Name, AccountType, Accounts_Active, GST_Applicable, TDS, modified_by)'''
+}
+ref: AccountsMaster.Accounts_Group_Name > AccountsGroup.id
+ref: AccountsMaster.modified_by > User.id
+
+
+Table Alternate_unit {
+  id big_auto [pk, unique]
+  addtional_unit foreign_key
+  conversion_Factor decimal
+  modified_by foreign_key [null]
+  Note: '''Alternate_unit(id, addtional_unit, conversion_Factor, modified_by)'''
+}
+ref: Alternate_unit.addtional_unit > UOM.id
+ref: Alternate_unit.modified_by > User.id
+
+
+Table Store {
+  id big_auto [pk, unique]
+  StoreName char
+  StoreAccount foreign_key [null]
+  StoreInCharge foreign_key [null]
+  matained boolean [default:`True`]
+  Action boolean [default:`True`]
+  Note: '''Store(id, StoreName, StoreAccount, StoreInCharge, matained, Action)'''
+}
+ref: Store.StoreAccount > AccountsMaster.id
+ref: Store.StoreInCharge > User.id
+
+
+Table display_group {
+  id big_auto [pk, unique]
+  display char
+  Note: '''display_group(id, display)'''
+}
+
+
+Table Item_Combo {
+  id big_auto [pk, unique]
+  part_number foreign_key
+  Item_Qty decimal
+  item_display foreign_key [null]
+  Is_Mandatory boolean [default:`True`]
+  Savedby foreign_key [null]
+  createdat date
+  Note: '''Item_Combo(id, part_number, Item_Qty, item_display, Is_Mandatory, Savedby, createdat)'''
+}
+ref: Item_Combo.part_number > ItemMaster.id
+ref: Item_Combo.item_display > display_group.id
+ref: Item_Combo.Savedby > User.id
+
+
+Table CustomerGroups {
+  id big_auto [pk, unique]
+  name char [unique]
+  parent_group char [null]
+  Active boolean [default:`True`]
+  created_at date_time
+  Saved_by foreign_key [null]
+  Note: '''CustomerGroups(id, name, parent_group, Active, created_at, Saved_by)'''
+}
+ref: CustomerGroups.Saved_by > User.id
+
+
+Table SupplierGroups {
+  id big_auto [pk, unique]
+  name char [unique]
+  parent_group char [null]
+  Active boolean [default:`True`]
+  created_at date_time
+  Saved_by foreign_key [null]
+  Note: '''SupplierGroups(id, name, parent_group, Active, created_at, Saved_by)'''
+}
+ref: SupplierGroups.Saved_by > User.id
+
+
+Table contact_detalis {
+  id big_auto [pk, unique]
+  Contact_Person_Name char
+  Salutation char
+  Email email [null]
+  Phone_number integer
+  Default boolean [default:`False`]
+  WhatsappNo integer [null]
+  OtherNo integer [null]
+  Note: '''contact_detalis(id, Contact_Person_Name, Salutation, Email, Phone_number, Default, WhatsappNo, OtherNo)'''
+}
+
+
+Table company_address {
+  id big_auto [pk, unique]
+  address_type char [null]
+  Address_Line_1 char
+  Address_Line_2 char [null]
+  City char
+  pincode integer
+  State char
+  Country char
+  Default boolean [default:`False`]
+  Note: '''company_address(id, address_type, Address_Line_1, Address_Line_2, City, pincode, State, Country, Default)'''
+}
+
+
+Table Supplier_Form_Data {
+  id big_auto [pk, unique]
+  Company_Name char [unique]
+  Legal_Name char
+  Customer boolean
+  Supplier boolean
+  Transporter boolean
+  TransporterId char [null]
+  GSTIN_Type char
+  GSTIN char [unique]
+  TCS char
+  Pan_no char [unique]
+  active boolean [default:`True`]
+  created_at date_time
+  Saved_by foreign_key [null]
+  customer_group foreign_key [null]
+  sales_person char [null]
+  customer_credited_period integer [null]
+  credited_limit integer [null]
+  supplier_group foreign_key [null]
+  supplier_credited_period integer [null]
+  Note: '''Supplier_Form_Data(id, Company_Name, Legal_Name, Customer, Supplier, Transporter, TransporterId, GSTIN_Type, GSTIN, TCS, Pan_no, active, created_at, Saved_by, customer_group, sales_person, customer_credited_period, credited_limit, supplier_group, supplier_credited_period)'''
+}
+ref: Supplier_Form_Data.Saved_by > User.id
+ref: Supplier_Form_Data.customer_group > CustomerGroups.id
+ref: Supplier_Form_Data.supplier_group > SupplierGroups.id
+
+
+Table itemmaster_supplier_form_data_contact {
+  contact_detalis_id auto [pk]
+  supplier_form_data_id auto [pk]
+}
+ref: Supplier_Form_Data.id > itemmaster_supplier_form_data_contact.supplier_form_data_id
+ref: contact_detalis.id > itemmaster_supplier_form_data_contact.contact_detalis_id
+
+
+Table itemmaster_supplier_form_data_address {
+  company_address_id auto [pk]
+  supplier_form_data_id auto [pk]
+}
+ref: Supplier_Form_Data.id > itemmaster_supplier_form_data_address.supplier_form_data_id
+ref: company_address.id > itemmaster_supplier_form_data_address.company_address_id
+
+
+Table ItemMaster {
+  id big_auto [pk, unique]
+  Item_PartCode char [unique]
+  Item_name char [unique]
+  Description text [null]
+  Item_type char [null]
+  Item_UOM foreign_key [null]
+  Item_Group foreign_key [null]
+  Item_Indicator char [null]
+  category foreign_key [null]
+  supplierData foreign_key [null]
+  Purchase_uom foreign_key [null]
+  Item_Cost integer [null]
+  Item_Safe_Stock integer [null]
+  Item_Order_Qty integer [null]
+  Item_Leadtime integer [null]
+  Item_Mrp float [null]
+  Item_min_price float [null]
+  Item_Sales_Account foreign_key [null]
+  Item_Purchase_Account foreign_key [null]
+  Item_HSN foreign_key [null]
+  Keep_stock boolean [default:`0`]
+  serial boolean [default:`0`]
+  serial_auto_gentrate boolean [default:`False`]
+  Serial_format char [null]
+  Serial_starting integer [null]
+  Batch_number boolean [default:`False`]
+  Service boolean [default:`False`]
+  Item_Warranty_based char [null]
+  Item_Installation boolean [default:`False`]
+  Invoicedate date [null]
+  installation_data date [null]
+  Item_Combo_bool boolean [default:`False`]
+  Item_Barcode boolean [default:`False`]
+  Item_Active boolean [default:`True`]
+  item_qc boolean [default:`False`]
+  modified_by foreign_key [null]
+  Note: '''ItemMaster(id, Item_PartCode, Item_name, Description, Item_type, Item_UOM, Item_Group, Item_Indicator, category, supplierData, Purchase_uom, Item_Cost, Item_Safe_Stock, Item_Order_Qty, Item_Leadtime, Item_Mrp, Item_mi
+n_price, Item_Sales_Account, Item_Purchase_Account, Item_HSN, Keep_stock, serial, serial_auto_gentrate, Serial_format, Serial_starting, Batch_number, Service, Item_Warranty_based, Item_Installation, Invoicedate, installation_data, Item_Combo_bool, Item_Barcode, Item_Active, item_qc, modified_by)'''
+}
+ref: ItemMaster.Item_UOM > UOM.id
+ref: ItemMaster.Item_Group > Item_Groups_Name.id
+ref: ItemMaster.category > Category.id
+ref: ItemMaster.supplierData > Supplier_Form_Data.id
+ref: ItemMaster.Purchase_uom > UOM.id
+ref: ItemMaster.Item_Sales_Account > AccountsMaster.id
+ref: ItemMaster.Item_Purchase_Account > AccountsMaster.id
+ref: ItemMaster.Item_HSN > Hsn.id
+ref: ItemMaster.modified_by > User.id
+
+
+Table itemmaster_itemmaster_Alternate_uom {
+  alternate_unit_id auto [pk]
+  itemmaster_id auto [pk]
+}
+ref: ItemMaster.id > itemmaster_itemmaster_Alternate_uom.itemmaster_id
+ref: Alternate_unit.id > itemmaster_itemmaster_Alternate_uom.alternate_unit_id
+
+
+Table itemmaster_itemmaster_Item_Combo_data {
+  item_combo_id auto [pk]
+  itemmaster_id auto [pk]
+}
+ref: ItemMaster.id > itemmaster_itemmaster_Item_Combo_data.itemmaster_id
+ref: Item_Combo.id > itemmaster_itemmaster_Item_Combo_data.item_combo_id
+
+
+Table SerialNumbers {
+  id big_auto [pk, unique]
+  SerialNumber char [unique]
+  CreatedAt date_time
+  UpdatedAt date_time
+  Note: '''SerialNumbers(id, SerialNumber, CreatedAt, UpdatedAt)'''
+}
+
+
+Table BatchNumber {
+  id big_auto [pk, unique]
+  part_no foreign_key
+  BatchNumberName char [null, unique]
+  CreatedAt date_time
+  UpdatedAt date_time
+  Note: '''BatchNumber(id, part_no, BatchNumberName, CreatedAt, UpdatedAt)'''
+}
+ref: BatchNumber.part_no > ItemMaster.id
+
+
+Table StockSerialHistory {
+  id big_auto [pk, unique]
+  part_no foreign_key
+  store foreign_key [null]
+  lastSerialHistory char [null]
+  CreatedAt date_time
+  UpdatedAt date_time
+  Note: '''StockSerialHistory(id, part_no, store, lastSerialHistory, CreatedAt, UpdatedAt)'''
+}
+ref: StockSerialHistory.part_no > ItemMaster.id
+ref: StockSerialHistory.store > Store.id
+
+
+Table ItemStock {
+  id big_auto [pk, unique]
+  part_no foreign_key
+  currentStock decimal [null]
+  store foreign_key
+  BatchNumber foreign_key [null]
+  UOM foreign_key [null]
+  lastSerialHistory char [null]
+  Note: '''ItemStock(id, part_no, currentStock, store, BatchNumber, UOM, lastSerialHistory)'''
+}
+ref: ItemStock.part_no > ItemMaster.id
+ref: ItemStock.store > Store.id
+ref: ItemStock.BatchNumber > BatchNumber.id
+ref: ItemStock.UOM > UOM.id
+
+
+Table itemmaster_itemstock_Serialnum {
+  serialnumbers_id auto [pk]
+  itemstock_id auto [pk]
+}
+ref: ItemStock.id > itemmaster_itemstock_Serialnum.itemstock_id
+ref: SerialNumbers.id > itemmaster_itemstock_Serialnum.serialnumbers_id
+
+
+Table StockHistoryLog {
+  id big_auto [pk, unique]
+  Action char
+  StockLink foreign_key
+  StoreLink foreign_key [null]
+  PartNumber foreign_key [null]
+  ColumnName char
+  PreviousState char
+  UpdatedState char
+  modifiedDate date_time
+  SavedBy foreign_key [null]
+  Note: '''StockHistoryLog(id, Action, StockLink, StoreLink, PartNumber, ColumnName, PreviousState, UpdatedState, modifiedDate, SavedBy)'''
+}
+ref: StockHistoryLog.StockLink > ItemStock.id
+ref: StockHistoryLog.StoreLink > Store.id
+ref: StockHistoryLog.PartNumber > ItemMaster.id
+ref: StockHistoryLog.SavedBy > User.id
+
+
+Table ItemInventoryApproval {
+  id big_auto [pk, unique]
+  part_no foreign_key
+  qty char
+  BatchNumber foreign_key [null]
+  UOM foreign_key [null]
+  Store foreign_key [null]
+  isDelete boolean [default:`False`]
+  Note: '''ItemInventoryApproval(id, part_no, qty, BatchNumber, UOM, Store, isDelete)'''
+}
+ref: ItemInventoryApproval.part_no > ItemMaster.id
+ref: ItemInventoryApproval.BatchNumber > BatchNumber.id
+ref: ItemInventoryApproval.UOM > UOM.id
+ref: ItemInventoryApproval.Store > Store.id
+
+
+Table itemmaster_iteminventoryapproval_Serialnum {
+  serialnumbers_id auto [pk]
+  iteminventoryapproval_id auto [pk]
+}
+ref: ItemInventoryApproval.id > itemmaster_iteminventoryapproval_Serialnum.iteminventoryapproval_id
+ref: SerialNumbers.id > itemmaster_iteminventoryapproval_Serialnum.serialnumbers_id
+
+
+Table InventoryHandler {
+  id big_auto [pk, unique]
+  InventoryHandlerId char [unique]
+  CreatedAt date_time
+  UpdatedAt date_time
+  SavedBy foreign_key [null]
+  Store foreign_key [null]
+  Actions char
+  Note: '''InventoryHandler(id, InventoryHandlerId, CreatedAt, UpdatedAt, SavedBy, Store, Actions)'''
+}
+ref: InventoryHandler.SavedBy > User.id
+ref: InventoryHandler.Store > Store.id
+
+
+Table itemmaster_inventoryhandler_InventoryId {
+  iteminventoryapproval_id auto [pk]
+  inventoryhandler_id auto [pk]
+}
+ref: InventoryHandler.id > itemmaster_inventoryhandler_InventoryId.inventoryhandler_id
+ref: ItemInventoryApproval.id > itemmaster_inventoryhandler_InventoryId.iteminventoryapproval_id
+
+
+Table CurrencyMaster {
+  id big_auto [pk, unique]
+  Name char [unique]
+  Currency_symbol char
+  Formate char
+  Active boolean [default:`True`]
+  createdAt date
+  SavedBy foreign_key [null]
+  Note: '''CurrencyMaster(id, Name, Currency_symbol, Formate, Active, createdAt, SavedBy)'''
+}
+ref: CurrencyMaster.SavedBy > User.id
+
+
+Table CurrencyExchange {
+  id big_auto [pk, unique]
+  Name char [unique]
+  rate decimal
+  Date date
+  SavedBy foreign_key [null]
+  Note: '''CurrencyExchange(id, Name, rate, Date, SavedBy)'''
+}
+ref: CurrencyExchange.SavedBy > User.id
+
+
+Table SalesOrderItem {
+  id big_auto [pk, unique]
+  partCode foreign_key [null]
+  Description char [null]
+  uom foreign_key [null]
+  qty decimal
+  store foreign_key [null]
+  BatchNo char [null]
+  rate decimal
+  amount decimal
+  DiscountPercentage decimal [null]
+  DiscountValue decimal [null]
+  DiscountValueForPerItem decimal [null]
+  FinalValue decimal [null]
+  cretedDate date
+  sgst decimal [null]
+  cgst decimal [null]
+  igst decimal [null]
+  createdby foreign_key [null]
+  Note: '''SalesOrderItem(id, partCode, Description, uom, qty, store, BatchNo, rate, amount, DiscountPercentage, DiscountValue, DiscountValueForPerItem, FinalValue, cretedDate, sgst, cgst, igst, createdby)'''
+}
+ref: SalesOrderItem.partCode > ItemMaster.id
+ref: SalesOrderItem.uom > UOM.id
+ref: SalesOrderItem.store > Store.id
+ref: SalesOrderItem.createdby > User.id
+
+
+Table SalesOrder {
+  id big_auto [pk, unique]
+  IsPOS boolean [default:`True`]
+  posType char
+  marketingEvent foreign_key [null]
+  OrderDate date
+  Mobile integer
+  CosName char
+  Email email
+  City char
+  Remarks char [null]
+  Currency foreign_key [null]
+  OverallDiscountPercentage decimal [null]
+  OverallDiscountValue decimal [null]
+  DiscountFinalTotal decimal [null]
+  TotalAmount decimal
+  igst j_s_o_n [null]
+  sgst j_s_o_n [null]
+  cgst j_s_o_n [null]
+  FinalTotalValue decimal
+  Note: '''SalesOrder(id, IsPOS, posType, marketingEvent, OrderDate, Mobile, CosName, Email, City, Remarks, Currency, OverallDiscountPercentage, OverallDiscountValue, DiscountFinalTotal, TotalAmount, igst, sgst, cgst, FinalTotalValue)'''
+}
+ref: SalesOrder.marketingEvent > Conferencedata.id
+ref: SalesOrder.Currency > CurrencyMaster.id
+
+
+Table itemmaster_salesorder_itemDetails {
+  salesorderitem_id auto [pk]
+  salesorder_id auto [pk]
+}
+ref: SalesOrder.id > itemmaster_salesorder_itemDetails.salesorder_id
+ref: SalesOrderItem.id > itemmaster_salesorder_itemDetails.salesorderitem_id
+
+
+Table testStaanTable {
+  id big_auto [pk, unique]
+  name char [null]
+  email email
+  Salary integer
+  Note: '''testStaanTable(id, name, email, Salary)'''
+}
