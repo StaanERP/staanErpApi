@@ -326,9 +326,9 @@ class contact_detalis(models.Model):
     Contact_Person_Name = models.CharField(max_length=100)
     Salutation = models.CharField(choices=salutation, max_length=10)
     Email = models.EmailField(null=True, blank=True)
-    Phone_number = models.IntegerField()
+    Phone_number = models.CharField(max_length=20)
     Default = models.BooleanField(default=False)
-    WhatsappNo = models.IntegerField(null=True, blank=True)
+    WhatsappNo = models.CharField(null=True, blank=True, max_length=20)
     OtherNo = models.IntegerField(null=True, blank=True)
 
 
