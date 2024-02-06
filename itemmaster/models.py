@@ -673,13 +673,12 @@ class SalesOrder(models.Model):
     OrderDate = models.DateField()
     store = models.ForeignKey(Store, on_delete=models.SET_NULL, null=True)
     # Sample
-    Mobile = models.IntegerField(null=True, blank=True)
-    WhatsappNumber = models.IntegerField(null=True, blank=True)
+    Mobile = models.CharField(null=True, blank=True)
+    WhatsappNumber = models.CharField(null=True, blank=True)
     CosName = models.CharField(max_length=100, null=True, blank=True)
     Email = models.EmailField(null=True, blank=True)
     City = models.CharField(max_length=50, null=True, blank=True)
     Remarks = models.CharField(max_length=200, null=True, blank=True)
-    # Sales data
     customerName = models.ForeignKey(Supplier_Form_Data,null=True ,on_delete=models.SET_NULL )
     BillingAddress = models.ForeignKey(company_address,related_name= "BillingAddress",  null=True ,on_delete=models.SET_NULL)
     DeliverAddress = models.ForeignKey(company_address,related_name= "DeliverAddress",  null=True ,on_delete=models.SET_NULL)
