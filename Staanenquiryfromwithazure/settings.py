@@ -25,8 +25,8 @@ SECRET_KEY = 'django-insecure-8yl-hpyid+th##7(-8h-dhom9m9^q*8+uesbvybfc50b-t9v4h
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
-#                  www.maxnik.org',"maxnik.org"
+ALLOWED_HOSTS = ["52.66.208.179",'www.maxnik.org',"maxnik.org"]
+
 # SECURE_SSL_REDIRECT = True
 # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -59,8 +59,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 CORS_ALLOWED_ORIGINS = [
-   # 'https://www.staanerp.com',
-    "http://localhost:3000",
+   'https://www.staanerp.com',
+   #  "http://localhost:3000",
 
 
 ]
