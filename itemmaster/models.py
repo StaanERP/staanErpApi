@@ -1,8 +1,10 @@
+from datetime import datetime
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
-from EnquriFromapi.models import *
+from EnquriFromapi.models import Conferencedata
 from django.db import transaction
 
 item_types = (("Product", "Product"),
@@ -104,6 +106,17 @@ currencyFormate = (
     ('000,000,000', '000,000,000'))
 Postypes_ = (('Sample', 'Sample'),
              ('Sales', 'Sales'))
+
+
+class ItemMasterHistory(models.Model):
+    Action = models.CharField(choices=Action, max_length=10)
+    ModelName = models.CharField(max_length=50)
+    ModelId = models.IntegerField()
+    ColumnName = models.CharField(max_length=250)
+    PreviousState = models.CharField(max_length=250)
+    UpdatedState = models.CharField(max_length=250)
+    modifiedDate = models.DateTimeField(auto_now_add=True)
+    SavedBy = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
 
 class EditListView(models.Model):
@@ -209,7 +222,7 @@ class AccountsGroup(models.Model):
 class AccountsMaster(models.Model):
     Accounts_Name = models.CharField(unique=True, max_length=50, )
     Accounts_Group_Name = models.ForeignKey(AccountsGroup, null=True, blank=True, on_delete=models.CASCADE)
-    AccountType = models.CharField(choices=Accounts_Type, max_length=20)
+    AccountType = models.CharField(choices=Accounts_Type, max_length=20, null=True, blank=True)
     Accounts_Active = models.BooleanField(default=True)
     GST_Applicable = models.BooleanField(default=False)
     TDS = models.BooleanField(default=False)
@@ -435,7 +448,6 @@ class ItemMaster(models.Model):
     Item_Installation = models.BooleanField(default=False)
     Invoicedate = models.DateField(null=True, blank=True)
     installation_data = models.DateField(null=True, blank=True)
-
     Item_Combo_bool = models.BooleanField(default=False)
     Item_Combo_data = models.ManyToManyField(Item_Combo, blank=True)
     Item_Barcode = models.BooleanField(default=False)
@@ -450,7 +462,6 @@ class ItemMaster(models.Model):
         # Check if a record with the same normalized name already exists
         if ItemMaster.objects.exclude(pk=self.pk).filter(Item_PartCode=self.Item_PartCode).exists():
             raise ValidationError("PartCode must be unique.")
-
         self.Item_name = self.Item_name.title()
 
         # Check if a record with the same normalized name already exists
@@ -540,10 +551,10 @@ class ItemStock(models.Model):
                     PartNumber=self.part_no,
                     StoreLink=self.store,
                     ColumnName="currentStock",
-                    PreviousState=0,  # No previous state for a new row
+                    PreviousState=0,
                     UpdatedState=str(self.currentStock),
                     modifiedDate=timezone.now(),
-                    SavedBy=kwargs.get('user'),
+                    SavedBy=kwargs.get('user')
                 )
 
 
@@ -672,17 +683,20 @@ class SalesOrder(models.Model):
     marketingEvent = models.ForeignKey(Conferencedata, null=True, on_delete=models.SET_NULL)
     OrderDate = models.DateField()
     store = models.ForeignKey(Store, on_delete=models.SET_NULL, null=True)
+    POS_ID = models.CharField(max_length=15, null=True, blank=True)
+
     # Sample
-    Mobile = models.CharField(null=True, blank=True)
-    WhatsappNumber = models.CharField(null=True, blank=True)
+    Mobile = models.CharField(null=True, blank=True, max_length=20)
+    WhatsappNumber = models.CharField(null=True, blank=True, max_length=20)
     CosName = models.CharField(max_length=100, null=True, blank=True)
     Email = models.EmailField(null=True, blank=True)
     City = models.CharField(max_length=50, null=True, blank=True)
     Remarks = models.CharField(max_length=200, null=True, blank=True)
-    customerName = models.ForeignKey(Supplier_Form_Data,null=True ,on_delete=models.SET_NULL )
-    BillingAddress = models.ForeignKey(company_address,related_name= "BillingAddress",  null=True ,on_delete=models.SET_NULL)
-    DeliverAddress = models.ForeignKey(company_address,related_name= "DeliverAddress",  null=True ,on_delete=models.SET_NULL)
-
+    customerName = models.ForeignKey(Supplier_Form_Data, null=True, on_delete=models.SET_NULL)
+    BillingAddress = models.ForeignKey(company_address, related_name="BillingAddress", null=True, blank=True,
+                                       on_delete=models.SET_NULL)
+    DeliverAddress = models.ForeignKey(company_address, related_name="DeliverAddress", null=True, blank=True,
+                                       on_delete=models.SET_NULL)
     """Billing Details"""
     Currency = models.ForeignKey(CurrencyMaster, null=True, on_delete=models.SET_NULL)
     """Item Details"""
@@ -699,8 +713,98 @@ class SalesOrder(models.Model):
     # AmountwithTax = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     FinalTotalValue = models.DecimalField(max_digits=10, decimal_places=2)
 
+    SAMPLE_POS_PREFIX = "POS-TE-"
+    SAMPLE_POS_ID_LENGTH = 3
+    SALES_POS_PREFIX = "POS-"
+    current_year = datetime.now().year
+    current_year_last_two_digits = str(current_year)[-2:]
+    previous_year = current_year - 1
+    previous_year_last_two_digits = str(previous_year)[-2:]
+    next_year = current_year + 1
+    next_year_last_two_digits = str(next_year)[-2:]
+    BEFORE_MARCH_SALES_POS_PREFIX = f'POS-{previous_year_last_two_digits}{current_year_last_two_digits}'
+    AFTER_MARCH_SALES_POS_PREFIX = f'POS-{current_year_last_two_digits}{next_year_last_two_digits}'
+    current_month = datetime.now().month
+    FINANCIAL_YEAR = ""
+
+    def save(self, *args, **kwargs):
+        if not self.id:
+            if self.posType == 'Sample':
+                latest_sales_order = SalesOrder.objects.filter(
+                    posType=self.posType
+                ).order_by('-id').first()
+
+                if latest_sales_order:
+                    last_pos_id = int(latest_sales_order.POS_ID[7:])
+                    new_pos_id_number = last_pos_id + 1
+                else:
+                    new_pos_id_number = 1
+
+                # Generate the new POS ID
+                self.POS_ID = f"{self.SAMPLE_POS_PREFIX}{new_pos_id_number:0{self.SAMPLE_POS_ID_LENGTH}d}"
+
+            else:
+                # If posType is not 'Sample'
+                if self.current_month <= 3:
+
+                    # If current month is before March, use the BEFORE_MARCH_SALES_POS_PREFIX
+                    Sales_latest_sales_order = SalesOrder.objects.filter(
+                        posType=self.posType,
+                        POS_ID__startswith=self.BEFORE_MARCH_SALES_POS_PREFIX
+                    ).order_by('-id').first()
+                    self.FINANCIAL_YEAR = self.BEFORE_MARCH_SALES_POS_PREFIX
+                else:
+                    # If current month is March or later, use the AFTER_MARCH_SALES_POS_PREFIX
+                    Sales_latest_sales_order = SalesOrder.objects.filter(
+                        posType=self.posType,
+                        POS_ID__startswith=self.AFTER_MARCH_SALES_POS_PREFIX
+                    ).order_by('-id').first()
+                    self.FINANCIAL_YEAR = self.AFTER_MARCH_SALES_POS_PREFIX
+
+                if Sales_latest_sales_order:
+                    last_pos_id = int(Sales_latest_sales_order.POS_ID[9:])
+                    new_pos_id_number = last_pos_id + 1
+                else:
+                    new_pos_id_number = 1
+
+                    # Generate the new POS ID
+                self.POS_ID = f"{self.FINANCIAL_YEAR}-{new_pos_id_number:0{4}d}"
+
+        super().save(*args, **kwargs)
+
 
 class testStaanTable(models.Model):
     name = models.CharField(max_length=500, null=True, blank=True)
     email = models.EmailField()
     Salary = models.IntegerField()
+
+
+#
+# class FinishedGoods(models.Model):
+#     SerialNo = models.IntegerField()
+#     ItemMaster = models.ForeignKey(ItemMaster, on_delete=models.SET_NULL, null=True, blank=True)
+#     Qty = models.DecimalField(max_digits=10, decimal_p laces=3)
+#     Unit = models.ForeignKey(UOM, on_delete=models.SET_NULL, null=True, blank=True)
+#     CostAllocations = models.DecimalField(max_digits=10, decimal_places=2)
+#
+# class RawMaterial(models.Model):
+#     SerialNo = models.IntegerField()
+#     ItemMaster = models.ForeignKey(ItemMaster, on_delete=models.SET_NULL, null=True, blank=True)
+#     Qty = models.DecimalField(max_digits=10, decimal_places=3)
+#     Unit = models.ForeignKey(UOM, on_delete=models.SET_NULL, null=True, blank=True)
+#     # FgStore = models.ForeignKey(Store, on_delete=models.CASCADE, null=True, blank=True)
+#
+# class Scrap(models.Model):
+#     SerialNo = models.IntegerField()
+#     ItemMaster = models.ForeignKey(ItemMaster, on_delete=models.SET_NULL, null=True, blank=True)
+#     Qty = models.DecimalField(max_digits=10, decimal_places=3)
+#     Unit = models.ForeignKey(UOM, on_delete=models.SET_NULL, null=True, blank=True)
+#     CostAll = models.DecimalField(max_digits=10, decimal_places=2)
+#
+#
+# class Bom(models.Model):
+#     BomNo = models.CharField()
+#     BomName = models.CharField(max_length=50)
+#     # FgStore = models.ForeignKey(Store, on_delete=models.CASCADE, null=True, blank=True)
+#     # ScrapRejectStore = models.ForeignKey(Store, on_delete=models.CASCADE, null=True, blank=True)
+#     Remarks = models.CharField(max_length=255)

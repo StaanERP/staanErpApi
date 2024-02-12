@@ -2,7 +2,9 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.contrib.auth.models import AbstractUser
+from importlib import import_module
 
+# from itemmaster.models import Store
 
 status_ = (
     ("Not Contacted", "Not Contacted"),
@@ -21,9 +23,11 @@ class Conferencedata(models.Model):
     Status = models.BooleanField(default=True)
     createdBy = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="created")
 
+    DefaultStore = models.ForeignKey('itemmaster.Store', on_delete=models.SET_NULL, null=True, blank=True)
+    Currency = models.ForeignKey("itemmaster.CurrencyMaster", on_delete=models.SET_NULL, null=True, blank=True)
+
     def save(self, *args, **kwargs):
         self.Name = self.Name.title()
-
         super(Conferencedata, self).save(*args, **kwargs)
 
 
@@ -66,4 +70,4 @@ class enquiryDatas(models.Model):
     followup = models.DateField(null=True, blank=True)
 
     def __str__(self):
-        return "Name: """+ self.Name+" , "+ "Organization :"+ self.OrganizationName
+        return "Name: """ + self.Name + " , " + "Organization :" + self.OrganizationName

@@ -1,22 +1,17 @@
+import json
+
 from django.http import HttpResponse
-from django.shortcuts import render
-from rest_framework import viewsets
 from rest_framework import status
 from datetime import datetime, timezone
-
 from rest_framework.views import APIView
-
-from .models import *
 from .serializer import *
-import json
 from django.http import JsonResponse
 from django.forms.models import model_to_dict
 from decimal import Decimal
 from collections import defaultdict
+from django.db import connection
 
 """EditListViews"""
-
-
 class EditListViews(APIView):
     def get(self, request):
         article = EditListView.objects.all().order_by('-id')
@@ -1183,8 +1178,8 @@ class testStaanTableDetails(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# stock statement part starts
-def process_stock_statement(store_id=None):
+# stock statement part start
+def process_stock_statement(store_id=None, group_id=None):
     item_master_data = list(ItemMaster.objects.values('id', 'Item_PartCode', 'Item_name', 'Item_Group'))
     store_data = {item['id']: item['StoreName'] for item in list(Store.objects.values('id', 'StoreName'))}
     stock_data = list(ItemStock.objects.values('id', 'part_no', 'currentStock', 'store'))
@@ -1216,25 +1211,29 @@ def process_stock_statement(store_id=None):
         data_result['stores'] = stores
         data_result['store_ids'] = store_ids
         filtered_master_items.append(data_result)
+    if group_id:
+        filtered_master_items = [item for item in filtered_master_items if item['item_group'] == item_group_data[int(group_id)]]
     return filtered_master_items
 
 
-def get_stock_statement_by_all_store(request):
-    """ get stock details in the all stores """
-    if request.method == 'GET':
-        filtered_data = process_stock_statement()
-        return JsonResponse(filtered_data, safe=False)
+# def get_stock_statement_by_all_store(request):
+#     """ get stock details in the all stores """
+#     if request.method == 'GET':
+#         filtered_data = process_stock_statement()
+#         return JsonResponse(filtered_data, safe=False)
+#
+#
+# def get_stock_statement_by_given_store(request, store_id):
+#     """ get stock details in the all stores """
+#     if request.method == 'GET':
+#         filtered_data = process_stock_statement(store_id=store_id)
+#         return JsonResponse(filtered_data, safe=False)
 
 
-def get_stock_statement_by_given_store(request, store_id):
-    """ get stock details in the all stores """
-    if request.method == 'GET':
-        filtered_data = process_stock_statement(store_id=store_id)
-        return JsonResponse(filtered_data, safe=False)
-
-
-def process_stock_statement_for_single_item(part_no, store_id=None):
+def process_stock_statement_for_single_item(part_no, store_id=None, group_id=None):
     item_master_instance = ItemMaster.objects.get(id=part_no)
+    if group_id:
+        item_master_instance = ItemMaster.objects.get(id=part_no, Item_Group=int(group_id))
     item_master_dict = model_to_dict(item_master_instance)
     store_data = {item['id']: item['StoreName'] for item in list(Store.objects.values('id', 'StoreName'))}
     item_group_data = {item['id']: item['name'] for item in list(Item_Groups_Name.objects.values('id', 'name'))}
@@ -1287,15 +1286,15 @@ def process_stock_statement_for_single_item(part_no, store_id=None):
             stock_statement_data.append(result_data)
     else:
         try:
-            sum_of_stocks_in_store = sum(item[0] for item in filtered_data)
+            sum_of_stocks_in_store = sum(item['currentStock'] for item in filtered_data)
         except:
             sum_of_stocks_in_store = 0
         try:
-            stores = ', '.join(list(set([store_data[item[1]] for item in filtered_data])))
+            stores = ', '.join(list(set([store_data[item['store']] for item in filtered_data])))
         except:
             stores = ''
         try:
-            store_ids = list(set([item[1] for item in filtered_data]))
+            store_ids = list(set([item['store'] for item in filtered_data]))
         except:
             store_ids = []
         result_data = {
@@ -1313,73 +1312,108 @@ def process_stock_statement_for_single_item(part_no, store_id=None):
     return stock_statement_data
 
 
-def get_stock_statement_by_all_store_for_single_part_number(request, part_no):
-    """ get stock details in the all stores """
-    if request.method == 'GET':
-        filtered_data = process_stock_statement_for_single_item(part_no)
-        return JsonResponse(filtered_data, safe=False)
-
-
-def get_stock_statement_by_given_store_for_single_part_number(request, part_no, store_id):
-    """ get stock details in the all stores """
-    if request.method == 'GET':
-        filtered_data = process_stock_statement_for_single_item(part_no, store_id=store_id)
-        return JsonResponse(filtered_data, safe=False)
-
+# def get_stock_statement_by_all_store_for_single_part_number(request, part_no):
+#     """ get stock details in the all stores """
+#     if request.method == 'GET':
+#         filtered_data = process_stock_statement_for_single_item(part_no)
+#         return JsonResponse(filtered_data, safe=False)
+#
+#
+# def get_stock_statement_by_given_store_for_single_part_number(request, part_no, store_id):
+#     """ get stock details in the all stores """
+#     if request.method == 'GET':
+#         filtered_data = process_stock_statement_for_single_item(part_no, store_id=store_id)
+#         return JsonResponse(filtered_data, safe=False)
 
 
 def get_stock_history_details(part_no, StockHistoryMasterData):
     processed_data = []
     for date_key in StockHistoryMasterData:
+        data = {
+            'part_no': part_no,
+            'start_stock': int(Decimal(StockHistoryMasterData[date_key][0]['PreviousState'])),
+            'end_stock': int(Decimal(StockHistoryMasterData[date_key][-1]['UpdatedState'])),
+            'date': date_key
+        }
+        total_item_added = 0
+        total_item_deleted = 0
         for history_item in StockHistoryMasterData[date_key]:
-            data = {
-                'part_no': part_no,
-                'start_stock': int(Decimal(history_item['PreviousState'])),
-                'end_stock': int(Decimal(history_item['UpdatedState'])),
-                'date': date_key
-            }
             modified_data = int(Decimal(history_item['UpdatedState'])) - int(Decimal(history_item['PreviousState']))
             if modified_data < 0:
-                data['action'] = 'reduce'
-                data['modification'] = f'{modified_data}'
+                total_item_deleted += modified_data
             elif modified_data > 0:
-                data['action'] = 'add'
-                data['modification'] = f'+{modified_data}'
-            processed_data.append(data)
+                total_item_added += modified_data
+        data['added'] = total_item_added
+        data['reduced'] = total_item_deleted
+        processed_data.append(data)
     return processed_data
 
 
-def getStockHistory(request, partCode):
-    stockData = StockHistoryLog.objects.all()
+def getStockHistory(request):
+    store_id = request.GET.get('store')
+    part_id = request.GET.get('part_id')
+    if store_id == 'null' or store_id == 'all':
+        store_id = None
+    if part_id == 'null' or part_id == 'all':
+        part_id = None
+    if store_id is None:
+        stockData = StockHistoryLog.objects.filter(PartNumber=int(part_id), ColumnName="currentStock")
+    else:
+        stockData = StockHistoryLog.objects.filter(PartNumber=int(part_id), ColumnName="currentStock", StoreLink=int(store_id))
+
     StockHistoryMasterData = {}
     for StockItem in stockData:
         StockItem = model_to_dict(StockItem)
-        if str(partCode) == str(StockItem['PartNumber']) and str(StockItem['ColumnName']) == "currentStock":
-            timestamp = datetime.fromisoformat(str(StockItem['modifiedDate']))
-            formatted_date = timestamp.strftime("%d-%m-%Y")
-            if formatted_date in StockHistoryMasterData.keys():
-                temp_list = StockHistoryMasterData[formatted_date]
-                temp_list.append(StockItem)
-                StockHistoryMasterData[formatted_date] = temp_list
-            else:
-                StockHistoryMasterData[formatted_date] = [StockItem]
-    processed_data = get_stock_history_details(partCode, StockHistoryMasterData)
+        timestamp = datetime.fromisoformat(str(StockItem['modifiedDate']))
+        formatted_date = timestamp.strftime("%d-%m-%Y")
+        if formatted_date in StockHistoryMasterData.keys():
+            temp_list = StockHistoryMasterData[formatted_date]
+            temp_list.append(StockItem)
+            StockHistoryMasterData[formatted_date] = temp_list
+        else:
+            StockHistoryMasterData[formatted_date] = [StockItem]
+    processed_data = get_stock_history_details(part_id, StockHistoryMasterData)
     return JsonResponse(processed_data, safe=False)
 
 
-def getStockHistoryWithStore(request, partCode, store_id):
-    stockData = StockHistoryLog.objects.all()
-    StockHistoryMasterData = {}
-    for StockItem in stockData:
-        StockItem = model_to_dict(StockItem)
-        if str(partCode) == str(StockItem['PartNumber']) and str(StockItem['ColumnName']) == "currentStock" and str(store_id) == str(StockItem['StoreLink']):
-            timestamp = datetime.fromisoformat(str(StockItem['modifiedDate']))
-            formatted_date = timestamp.strftime("%Y-%m-%d")
-            if formatted_date in StockHistoryMasterData.keys():
-                temp_list = StockHistoryMasterData[formatted_date]
-                temp_list.append(StockItem)
-                StockHistoryMasterData[formatted_date] = temp_list
+# def getStockHistoryWithStore(request, partCode, store_id):
+#     stockData = StockHistoryLog.objects.all()
+#     StockHistoryMasterData = {}
+#     for StockItem in stockData:
+#         StockItem = model_to_dict(StockItem)
+#         if str(partCode) == str(StockItem['PartNumber']) and str(StockItem['ColumnName']) == "currentStock" and str(store_id) == str(StockItem['StoreLink']):
+#             timestamp = datetime.fromisoformat(str(StockItem['modifiedDate']))
+#             formatted_date = timestamp.strftime("%Y-%m-%d")
+#             if formatted_date in StockHistoryMasterData.keys():
+#                 temp_list = StockHistoryMasterData[formatted_date]
+#                 temp_list.append(StockItem)
+#                 StockHistoryMasterData[formatted_date] = temp_list
+#             else:
+#                 StockHistoryMasterData[formatted_date] = [StockItem]
+#     processed_data = get_stock_history_details(partCode, StockHistoryMasterData)
+#     return JsonResponse(processed_data, safe=False)
+
+
+def stock_statement_store_group_filter(request):
+    if request.method == 'GET':
+        try:
+            store_id = request.GET.get('store')
+            group_id = request.GET.get('group')
+            part_id = request.GET.get('part_id')
+            if store_id == 'null' or store_id == 'all':
+                store_id = None
+            if group_id == 'null' or group_id == 'all':
+                group_id = None
+            if part_id == 'null' or part_id == 'all':
+                part_id = None
+
+            if part_id:
+                filtered_data = process_stock_statement_for_single_item(part_id, store_id, group_id)
             else:
-                StockHistoryMasterData[formatted_date] = [StockItem]
-    processed_data = get_stock_history_details(partCode, StockHistoryMasterData)
-    return JsonResponse(processed_data, safe=False)
+                filtered_data = process_stock_statement(store_id, group_id)
+
+            return JsonResponse(filtered_data, safe=False)
+        except Exception as e :
+            print(e)
+
+
