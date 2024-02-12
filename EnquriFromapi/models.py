@@ -4,7 +4,7 @@ from django.core.validators import RegexValidator
 from django.contrib.auth.models import AbstractUser
 from importlib import import_module
 
-# from itemmaster.models import Store
+from itemmaster import apps
 
 status_ = (
     ("Not Contacted", "Not Contacted"),
