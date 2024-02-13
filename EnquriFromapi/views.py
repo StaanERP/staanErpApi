@@ -1,5 +1,7 @@
 import os
 import json
+
+from django.db.models import ProtectedError
 from django.http import HttpResponse, JsonResponse
 from rest_framework.response import Response
 
@@ -130,6 +132,7 @@ def checker(request):
 
 """EnquiryApi get and post """
 
+
 class EnquiryApi(APIView):
 
     def get(self, request):
@@ -161,7 +164,7 @@ class EnquiryApi(APIView):
             try:
                 send_email(request, email_value, intrested_list)
             except Exception as e:
-                print(e+">>>>>")
+                print(e + ">>>>>")
             print(serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
@@ -272,8 +275,7 @@ class conferenceDetails(APIView):
         print(request)
         article = self.get_object(pk)
         serializer = ConferenceSerializers(article, data=request.data)
-        print(serializer.is_valid())
-        print(serializer)
+
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -281,8 +283,18 @@ class conferenceDetails(APIView):
 
     def delete(self, request, pk):
         article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            # If the deletion is protected, handle the exception
+
+            error_message = "This data Linked with other models"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 """user get"""

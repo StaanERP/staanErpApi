@@ -135,7 +135,7 @@ class Hsn(models.Model):
 class Item_Groups_Name(models.Model):
     name = models.CharField(max_length=100)
     Parent_Group = models.CharField(max_length=100, null=True, blank=True)
-    hsn = models.ForeignKey(Hsn, null=True, blank=True, on_delete=models.SET_NULL)
+    hsn = models.ForeignKey(Hsn, null=True, blank=True, on_delete=models.PROTECT)
     modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
     def save(self, *args, **kwargs):
@@ -158,7 +158,7 @@ class UOM(models.Model):
         unique_together = ('name',)
 
     def save(self, *args, **kwargs):
-        self.name = self.name.lower()
+        self.name = self.name.title()
         if UOM.objects.exclude(pk=self.pk).filter(name=self.name).exists():
             raise ValidationError("Name must be unique.")
 
@@ -174,7 +174,7 @@ class Category(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        self.name = self.name.lower()
+        self.name = self.name.title()
 
         # Check if a record with the same normalized name already exists
         if Category.objects.exclude(pk=self.pk).filter(name=self.name).exists():
@@ -196,7 +196,7 @@ class AccountsGroup(models.Model):
         return self.Accounts_Group_Name
 
     def save(self, *args, **kwargs):
-        self.Accounts_Group_Name = self.Accounts_Group_Name.lower()
+        self.Accounts_Group_Name = self.Accounts_Group_Name.title()
 
         # Check if a record with the same normalized name already exists
         if AccountsGroup.objects.exclude(pk=self.pk).filter(Accounts_Group_Name=self.Accounts_Group_Name).exists():
@@ -210,7 +210,7 @@ class AccountsGroup(models.Model):
 
 class AccountsMaster(models.Model):
     Accounts_Name = models.CharField(unique=True, max_length=50, )
-    Accounts_Group_Name = models.ForeignKey(AccountsGroup, null=True, blank=True, on_delete=models.CASCADE)
+    Accounts_Group_Name = models.ForeignKey(AccountsGroup, null=True, blank=True, on_delete=models.PROTECT)
     AccountType = models.CharField(choices=Accounts_Type, max_length=20, null=True, blank=True)
     Accounts_Active = models.BooleanField(default=True)
     GST_Applicable = models.BooleanField(default=False)
@@ -234,7 +234,7 @@ class AccountsMaster(models.Model):
 
 
 class Alternate_unit(models.Model):
-    addtional_unit = models.ForeignKey(UOM, on_delete=models.CASCADE)
+    addtional_unit = models.ForeignKey(UOM, on_delete=models.PROTECT)
     conversion_Factor = models.DecimalField(max_digits=10, decimal_places=3)
     modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -244,7 +244,7 @@ class Alternate_unit(models.Model):
 
 class Store(models.Model):
     StoreName = models.CharField(max_length=100)
-    StoreAccount = models.ForeignKey(AccountsMaster, null=True, blank=True, on_delete=models.CASCADE)
+    StoreAccount = models.ForeignKey(AccountsMaster, null=True, blank=True, on_delete=models.PROTECT)
     StoreInCharge = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     matained = models.BooleanField(default=True)
     Action = models.BooleanField(default=True)
@@ -252,6 +252,18 @@ class Store(models.Model):
     def __str__(self):
         return self.StoreName
 
+
+    def save(self, *args, **kwargs):
+        self.StoreName = self.StoreName.title()
+
+        # Check if a record with the same normalized name already exists
+        if Store.objects.exclude(pk=self.pk).filter(StoreName=self.StoreName).exists():
+            raise ValidationError("Accounts Name must be unique.")
+
+        # Save the object after performing necessary operations
+        super(Store, self).save(*args, **kwargs)
+
+        return self
 
 """Item combo"""
 
@@ -264,7 +276,7 @@ class display_group(models.Model):
 
 
 class Item_Combo(models.Model):
-    part_number = models.ForeignKey('ItemMaster', on_delete=models.CASCADE)
+    part_number = models.ForeignKey('ItemMaster', on_delete=models.PROTECT)
     Item_Qty = models.DecimalField(max_digits=10, decimal_places=3)
     item_display = models.ForeignKey(display_group, on_delete=models.CASCADE, null=True, blank=True)
     Is_Mandatory = models.BooleanField(default=True)
@@ -399,16 +411,16 @@ class ItemMaster(models.Model):
     Item_name = models.CharField(unique=True, max_length=100)
     Description = models.TextField(max_length=300, null=True, blank=True)
     Item_type = models.CharField(choices=item_types, null=True, blank=True, max_length=10)
-    Item_UOM = models.ForeignKey(UOM, related_name="unit", on_delete=models.CASCADE, null=True, blank=True)
+    Item_UOM = models.ForeignKey(UOM, related_name="unit", on_delete=models.PROTECT, null=True, blank=True)
 
     Item_Group = models.ForeignKey(Item_Groups_Name, null=True, related_name="group", blank=True,
-                                   on_delete=models.CASCADE)
+                                   on_delete=models.PROTECT)
     Alternate_uom = models.ManyToManyField(Alternate_unit, blank=True)
     Item_Indicator = models.CharField(choices=Item_Indicators, max_length=10, null=True, blank=True)
     category = models.ForeignKey(Category, related_name="Category", on_delete=models.CASCADE, null=True, blank=True)
     supplierData = models.ForeignKey(Supplier_Form_Data, on_delete=models.CASCADE, null=True, blank=True)
     '''Purchase'''
-    Purchase_uom = models.ForeignKey(UOM, related_name="uom", on_delete=models.CASCADE, null=True, blank=True)
+    Purchase_uom = models.ForeignKey(UOM, related_name="uom", on_delete=models.PROTECT, null=True, blank=True)
     Item_Cost = models.IntegerField(null=True, blank=True)
     Item_Safe_Stock = models.IntegerField(null=True, blank=True)
     Item_Order_Qty = models.IntegerField(null=True, blank=True)
@@ -417,10 +429,10 @@ class ItemMaster(models.Model):
     Item_Mrp = models.FloatField(null=True, blank=True)
     Item_min_price = models.FloatField(null=True, blank=True)
     Item_Sales_Account = models.ForeignKey(AccountsMaster, related_name="Accounts_Master_Sales_Account",
-                                           on_delete=models.CASCADE, null=True, blank=True)
+                                           on_delete=models.PROTECT, null=True, blank=True)
     Item_Purchase_Account = models.ForeignKey(AccountsMaster, related_name="Accounts_Master_Purchase_Account",
-                                              on_delete=models.CASCADE, null=True, blank=True)
-    Item_HSN = models.ForeignKey(Hsn, on_delete=models.CASCADE, null=True, blank=True)
+                                              on_delete=models.PROTECT, null=True, blank=True)
+    Item_HSN = models.ForeignKey(Hsn, on_delete=models.PROTECT, null=True, blank=True)
     Keep_stock = models.BooleanField(default=0)
     '''serial number'''
     serial = models.BooleanField(default=0)
@@ -473,27 +485,27 @@ class SerialNumbers(models.Model):
 
 
 class BatchNumber(models.Model):
-    part_no = models.ForeignKey(ItemMaster, on_delete=models.CASCADE)
+    part_no = models.ForeignKey(ItemMaster, on_delete=models.PROTECT)
     BatchNumberName = models.CharField(max_length=50, null=True, blank=True, unique=True)
     CreatedAt = models.DateTimeField(auto_now_add=True)
     UpdatedAt = models.DateTimeField(auto_now=True)
 
 
 class StockSerialHistory(models.Model):
-    part_no = models.ForeignKey(ItemMaster, on_delete=models.CASCADE)
-    store = models.ForeignKey(Store, on_delete=models.SET_NULL, null=True, blank=True)
+    part_no = models.ForeignKey(ItemMaster, on_delete=models.PROTECT)
+    store = models.ForeignKey(Store, on_delete=models.PROTECT, null=True, blank=True)
     lastSerialHistory = models.CharField(max_length=50, null=True, blank=True)
     CreatedAt = models.DateTimeField(auto_now_add=True)
     UpdatedAt = models.DateTimeField(auto_now=True)
 
 
 class ItemStock(models.Model):
-    part_no = models.ForeignKey(ItemMaster, on_delete=models.CASCADE)
+    part_no = models.ForeignKey(ItemMaster, on_delete=models.PROTECT)
     currentStock = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
-    store = models.ForeignKey(Store, on_delete=models.CASCADE)
+    store = models.ForeignKey(Store, on_delete=models.PROTECT)
     Serialnum = models.ManyToManyField(SerialNumbers, blank=True)
     BatchNumber = models.ForeignKey(BatchNumber, null=True, blank=True, on_delete=models.SET_NULL)
-    UOM = models.ForeignKey(UOM, on_delete=models.SET_NULL, null=True, blank=True)
+    UOM = models.ForeignKey(UOM, on_delete=models.PROTECT, null=True, blank=True)
     """only for serialnum to track last serial number"""
     lastSerialHistory = models.CharField(max_length=50, null=True, blank=True)
 
@@ -550,8 +562,8 @@ class ItemStock(models.Model):
 class StockHistoryLog(models.Model):
     Action = models.CharField(choices=Action, max_length=10)
     StockLink = models.ForeignKey(ItemStock, on_delete=models.CASCADE)
-    StoreLink = models.ForeignKey(Store, on_delete=models.CASCADE, null=True, blank=True)
-    PartNumber = models.ForeignKey(ItemMaster, on_delete=models.CASCADE, null=True, blank=True)
+    StoreLink = models.ForeignKey(Store, on_delete=models.PROTECT, null=True, blank=True)
+    PartNumber = models.ForeignKey(ItemMaster, on_delete=models.PROTECT, null=True, blank=True)
     ColumnName = models.CharField(max_length=250)
     PreviousState = models.CharField(max_length=250)
     UpdatedState = models.CharField(max_length=250)
@@ -560,12 +572,12 @@ class StockHistoryLog(models.Model):
 
 
 class ItemInventoryApproval(models.Model):
-    part_no = models.ForeignKey(ItemMaster, on_delete=models.CASCADE)
+    part_no = models.ForeignKey(ItemMaster, on_delete=models.PROTECT)
     qty = models.CharField(max_length=50)
     Serialnum = models.ManyToManyField(SerialNumbers, blank=True)
     BatchNumber = models.ForeignKey(BatchNumber, on_delete=models.SET_NULL, null=True, blank=True)
-    UOM = models.ForeignKey(UOM, on_delete=models.SET_NULL, null=True, blank=True)
-    Store = models.ForeignKey(Store, on_delete=models.SET_NULL, null=True, blank=True)
+    UOM = models.ForeignKey(UOM, on_delete=models.PROTECT, null=True, blank=True)
+    Store = models.ForeignKey(Store, on_delete=models.PROTECT, null=True, blank=True)
     isDelete = models.BooleanField(default=False)
 
     def __str__(self):
@@ -583,7 +595,7 @@ class InventoryHandler(models.Model):
     CreatedAt = models.DateTimeField(auto_now_add=True)
     UpdatedAt = models.DateTimeField(auto_now=True)
     SavedBy = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    Store = models.ForeignKey(Store, on_delete=models.SET_NULL, null=True, blank=True)
+    Store = models.ForeignKey(Store, on_delete=models.PROTECT, null=True, blank=True)
     Actions = models.CharField(choices=Action, max_length=10)
 
     def __str__(self):
@@ -644,9 +656,9 @@ class CurrencyExchange(models.Model):
 
 
 class SalesOrderItem(models.Model):
-    partCode = models.ForeignKey(ItemMaster, on_delete=models.SET_NULL, null=True)
+    partCode = models.ForeignKey(ItemMaster, on_delete=models.PROTECT, null=True)
     Description = models.CharField(max_length=500, null=True, blank=True)
-    uom = models.ForeignKey(UOM, on_delete=models.SET_NULL, null=True)
+    uom = models.ForeignKey(UOM, on_delete=models.PROTECT, null=True)
     qty = models.DecimalField(max_digits=10, decimal_places=3)
     Serial = models.ManyToManyField(SerialNumbers, blank=True)
     Batch = models.ForeignKey(BatchNumber, null=True, blank=True, on_delete=models.SET_NULL)
@@ -669,9 +681,9 @@ class SalesOrderItem(models.Model):
 class SalesOrder(models.Model):
     IsPOS = models.BooleanField(default=True)
     posType = models.CharField(choices=Postypes_, max_length=50)
-    marketingEvent = models.ForeignKey('EnquriFromapi.Conferencedata', null=True, on_delete=models.SET_NULL, swappable=True)
+    marketingEvent = models.ForeignKey('EnquriFromapi.Conferencedata', null=True, on_delete=models.PROTECT, swappable=True)
     OrderDate = models.DateField()
-    store = models.ForeignKey(Store, on_delete=models.SET_NULL, null=True)
+    store = models.ForeignKey(Store, on_delete=models.PROTECT, null=True)
     POS_ID = models.CharField(max_length=15, null=True, blank=True)
     # Sample
     Mobile = models.CharField(null=True, blank=True, max_length=20)
@@ -686,7 +698,7 @@ class SalesOrder(models.Model):
     DeliverAddress = models.ForeignKey(company_address, related_name="DeliverAddress", null=True, blank=True,
                                        on_delete=models.SET_NULL)
     """Billing Details"""
-    Currency = models.ForeignKey(CurrencyMaster, null=True, on_delete=models.SET_NULL)
+    Currency = models.ForeignKey(CurrencyMaster, null=True, on_delete=models.PROTECT)
     """Item Details"""
     itemDetails = models.ManyToManyField(SalesOrderItem, blank=True)
     OverallDiscountPercentage = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

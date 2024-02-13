@@ -1,5 +1,6 @@
 import json
 
+from django.db.models import ProtectedError
 from django.http import HttpResponse
 from rest_framework import status
 from datetime import datetime, timezone
@@ -99,10 +100,18 @@ class HsnDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            # If the deletion is protected, handle the exception
+            error_message = "This data Linked with other models"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 """ItemGroup"""
 
@@ -143,10 +152,18 @@ class ItemGroupDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            # If the deletion is protected, handle the exception
+            error_message = "This data Linked with other models"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 "UOM"
 
@@ -188,9 +205,17 @@ class UOMDetails(APIView):
 
     def delete(self, request, pk):
         article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
+        try:
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            # If the deletion is protected, handle the exception
+            error_message = "This data Linked with other models"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 """Category"""
 
@@ -247,9 +272,18 @@ class AccountsGroupDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            # If the deletion is protected, handle the exception
+            error_message = "This data Linked with other models"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 """AccountsMaster"""
@@ -290,9 +324,19 @@ class AccountsMasterDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            # If the deletion is protected, handle the exception
+            error_message = "This data Linked with other models"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 """Alternate_unit"""
@@ -429,9 +473,18 @@ class StoreDetails(APIView):
 
     def delete(self, request, pk):
         article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            # If the deletion is protected, handle the exception
 
+            error_message = "This data Linked with other models"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 """StockSerialHistory"""
 
@@ -964,9 +1017,6 @@ class CurrencyMasterCreateView(APIView):
 
     def post(self, request):
         serializer = CurrencyMasterSerializer(data=request.data)
-        print(serializer)
-        print(serializer.is_valid())
-        print(serializer.errors)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -994,9 +1044,19 @@ class CurrencyMasterDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            # If the deletion is protected, handle the exception
+            error_message = "This data Linked with other models"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 class CurrencyExchangeCreateView(APIView):
@@ -1034,9 +1094,18 @@ class CurrencyExchangeDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            # If the deletion is protected, handle the exception
+            error_message = "This data Linked with other models"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 """SalesOrderItem"""
