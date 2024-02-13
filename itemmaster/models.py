@@ -4,8 +4,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
-from EnquriFromapi.models import Conferencedata
 from django.db import transaction
+from django.core.validators import RegexValidator
 
 item_types = (("Product", "Product"),
               ("Service", "Service"))
@@ -106,17 +106,6 @@ currencyFormate = (
     ('000,000,000', '000,000,000'))
 Postypes_ = (('Sample', 'Sample'),
              ('Sales', 'Sales'))
-
-
-class ItemMasterHistory(models.Model):
-    Action = models.CharField(choices=Action, max_length=10)
-    ModelName = models.CharField(max_length=50)
-    ModelId = models.IntegerField()
-    ColumnName = models.CharField(max_length=250)
-    PreviousState = models.CharField(max_length=250)
-    UpdatedState = models.CharField(max_length=250)
-    modifiedDate = models.DateTimeField(auto_now_add=True)
-    SavedBy = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
 
 class EditListView(models.Model):
@@ -680,11 +669,10 @@ class SalesOrderItem(models.Model):
 class SalesOrder(models.Model):
     IsPOS = models.BooleanField(default=True)
     posType = models.CharField(choices=Postypes_, max_length=50)
-    marketingEvent = models.ForeignKey(Conferencedata, null=True, on_delete=models.SET_NULL)
+    marketingEvent = models.ForeignKey('EnquriFromapi.Conferencedata', null=True, on_delete=models.SET_NULL, swappable=True)
     OrderDate = models.DateField()
     store = models.ForeignKey(Store, on_delete=models.SET_NULL, null=True)
     POS_ID = models.CharField(max_length=15, null=True, blank=True)
-
     # Sample
     Mobile = models.CharField(null=True, blank=True, max_length=20)
     WhatsappNumber = models.CharField(null=True, blank=True, max_length=20)
@@ -709,7 +697,6 @@ class SalesOrder(models.Model):
     igst = models.JSONField(null=True, blank=True)
     sgst = models.JSONField(null=True, blank=True)
     cgst = models.JSONField(null=True, blank=True)
-
     # AmountwithTax = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     FinalTotalValue = models.DecimalField(max_digits=10, decimal_places=2)
 
@@ -728,6 +715,7 @@ class SalesOrder(models.Model):
     FINANCIAL_YEAR = ""
 
     def save(self, *args, **kwargs):
+        from EnquriFromapi.models import Conferencedata
         if not self.id:
             if self.posType == 'Sample':
                 latest_sales_order = SalesOrder.objects.filter(
@@ -777,6 +765,7 @@ class testStaanTable(models.Model):
     name = models.CharField(max_length=500, null=True, blank=True)
     email = models.EmailField()
     Salary = models.IntegerField()
+    age = models.IntegerField(null=True, blank=True)
 
 
 #
