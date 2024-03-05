@@ -1,8 +1,16 @@
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
+
 from .models import *
 from django.contrib.auth.models import User
 from rest_framework.authtoken.views import Token
 from rest_framework.response import Response
+
+
+class ItemMasterHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemMasterHistory
+        fields = "__all__"
 
 
 class EditListViewSerializer(serializers.ModelSerializer):
@@ -60,15 +68,18 @@ class StoreSerializer(serializers.ModelSerializer):
         model = Store
         fields = "__all__"
 
+
 class BatchNumberSerializer(serializers.ModelSerializer):
     class Meta:
         model = BatchNumber
         fields = "__all__"
 
+
 class StockSerialHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = StockSerialHistory
         fields = "__all__"
+
 
 class StockHistoryLogSerializer(serializers.ModelSerializer):
     class Meta:
@@ -99,10 +110,18 @@ class ItemInventoryApprovalSerializer(serializers.ModelSerializer):
         model = ItemInventoryApproval
         fields = "__all__"
 
+
 class InventoryHandlerSerializer(serializers.ModelSerializer):
     class Meta:
         model = InventoryHandler
         fields = "__all__"
+
+
+class displayGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = display_group
+        fields = "__all__"
+
 
 class ItemComboSerializer(serializers.ModelSerializer):
     class Meta:
@@ -169,16 +188,58 @@ class SalesOrderItemSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class PaymentModeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = paymentMode
+        fields = "__all__"
+
+
 class SalesOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = SalesOrder
         fields = "__all__"
+
 
 class testStaanTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = testStaanTable
         fields = "__all__"
 
+
+class NumberingSeriesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NumberingSeries
+        fields = '__all__'
+
+
+class FinishedGoodsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FinishedGoods
+        fields = '__all__'
+
+
+class RawMaterialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RawMaterial
+        fields = '__all__'
+
+
+class ScrapSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Scrap
+        fields = '__all__'
+
+
+class RoutingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Routing
+        fields = "__all__"
+
+
+class BomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bom
+        fields = "__all__"
 # class UserSerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = User

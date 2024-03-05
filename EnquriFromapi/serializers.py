@@ -31,7 +31,8 @@ class ConferenceSerializers(serializers.ModelSerializer):
 
 class EnquirySerializers(serializers.ModelSerializer):
     # Use the ConferencedataSerializer for the nested field
-
+    # Interesteds = serializers.PrimaryKeyRelatedField(queryset=product.objects.all(), required=False)
     class Meta:
         model = enquiryDatas
+        # exclude = ('Interesteds',)
         fields = "__all__"

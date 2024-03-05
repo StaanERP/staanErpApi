@@ -1,3 +1,4 @@
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.routers import DefaultRouter
 from django.urls import path, include
 
@@ -5,8 +6,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from  itemmaster.views import *
+from .schema import schema
+from graphene_django.views import GraphQLView
 
 urlpatterns = [
+    path("graphql", csrf_exempt(GraphQLView.as_view(graphiql = True, schema=schema))),
+    path('Itemmsterhistor/<int:pk>',  getItemMasterHistory.as_view()),
     path('hsn',  HsnCreateView.as_view()),
     path('hsn/<int:pk>',  HsnDetails.as_view()),
     path('itemGroup',  ItemGroupCreateView.as_view()),
@@ -36,6 +41,8 @@ urlpatterns = [
     path('InventoryApprovals', ItemInventoryApprovalCreateView.as_view()),
     path('EditListViews', EditListViews.as_view()),
     path('EditListViews/<int:pk>', EditListViewDetails.as_view()),
+    path('displaygroup', displayGroupCreateView.as_view()),
+    path('displaygroup/<int:pk>', displayGroupDetails.as_view()),
     path('ItemCombo', ItemComboCreateView.as_view()),
     path('ItemCombo/<int:pk>', ItemComboDetails.as_view()),
     path('CustomerGroup', CustomerGroupCreateView.as_view()),
@@ -54,15 +61,25 @@ urlpatterns = [
     path('CurrencyExchange/<int:pk>', CurrencyExchangeDetails.as_view()),
     path('SalesOrderItem', SalesOrderItemCreateView.as_view()),
     path('SalesOrderItem/<int:pk>', SalesOrderItemDetails.as_view()),
+    path('payment_mode', PaymentModeCreateView.as_view()),
+    path('payment_mode/<int:pk>', PaymentModeDetails.as_view()),
     path('SalesOrder', SalesOrderCreateView.as_view()),
     path('SalesOrder/<int:pk>', SalesOrderDetails.as_view()),
     path('InventoryHandler', InventoryHandlerCreateView.as_view()),
     path('InventoryHandler/<int:pk>', InventoryHandlerDetails.as_view()),
+    path('NumberingSeries', NumberingSeriesCreateView.as_view()),
+    path('NumberingSeries/<int:pk>', NumberingSeriesDetails.as_view()),
+    path('finished_goods', FinishedGoodsCreateView.as_view()),
+    path('finished_goods/<int:pk>', FinishedGoodsDetails.as_view()),
+    path('raw_material', RawMaterialCreateView.as_view()),
+    path('raw_material/<int:pk>', RawMaterialDetails.as_view()),
+    path('scrap', ScrapCreateView.as_view()),
+    path('scrap/<int:pk>', ScrapDetails.as_view()),
+    path('routing', RoutingCreateView.as_view()),
+    path('bom', BomCreateView.as_view()),
+    path('bom/<int:pk>', BomDetails.as_view()),
     path('StockHistory', getStockHistory),
-    # path('StockHistory/<str:partCode>/<str:store_id>', getStockHistoryWithStore),
-    # path('stock-statement', get_stock_statement_by_all_store),
     path('stock-statement', stock_statement_store_group_filter),
-    # path('stock-statement/<str:store_id>', get_stock_statement_by_given_store),
-    # path('stock-statement/single/<str:part_no>', get_stock_statement_by_all_store_for_single_part_number),
-    # path('stock-statement/single/<str:part_no>/<str:store_id>', get_stock_statement_by_given_store_for_single_part_number),
+    path('item-combo-get-filter', get_item_combo_),
+    path('pos-report-details', get_report_details)
 ]

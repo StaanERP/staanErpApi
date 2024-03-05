@@ -11,8 +11,12 @@ from django.forms.models import model_to_dict
 from decimal import Decimal
 from collections import defaultdict
 from django.db import connection
+from django.core.serializers import serialize
+from django.db.models import Prefetch
 
 """EditListViews"""
+
+
 class EditListViews(APIView):
     def get(self, request):
         article = EditListView.objects.all().order_by('-id')
@@ -54,9 +58,18 @@ class EditListViewDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 "Hsn"
@@ -64,7 +77,7 @@ class EditListViewDetails(APIView):
 
 class HsnCreateView(APIView):
     def get(self, request):
-        article = Hsn.objects.all().order_by('-id')
+        article = Hsn.objects.all().order_by('-id').filter(isDelete=False)
 
         serialzer = HsnSerializer(article, many=True)
 
@@ -105,20 +118,21 @@ class HsnDetails(APIView):
             article.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ProtectedError as e:
-            # If the deletion is protected, handle the exception
-            error_message = "This data Linked with other models"
+            print(e)
+            error_message = "This data Linked with other modules"
             return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            # Handle other exceptions
+            #         # Handle other exceptions
             print(e)
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 """ItemGroup"""
 
 
 class ItemGroupCreateView(APIView):
     def get(self, request):
-        article = Item_Groups_Name.objects.all().order_by('-id')
+        article = Item_Groups_Name.objects.all().order_by('-id').filter(isDelete=False)
         serialzer = ItemGroupSerializer(article, many=True)
         return Response(serialzer.data)
 
@@ -157,20 +171,21 @@ class ItemGroupDetails(APIView):
             article.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ProtectedError as e:
-            # If the deletion is protected, handle the exception
-            error_message = "This data Linked with other models"
+            print(e)
+            error_message = "This data Linked with other modules"
             return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            # Handle other exceptions
+            #         # Handle other exceptions
             print(e)
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 "UOM"
 
 
 class UOMCreateView(APIView):
     def get(self, request):
-        article = UOM.objects.all().order_by('-id')
+        article = UOM.objects.all().order_by('-id').filter(isDelete=False)
         serialzer = UOMSerializer(article, many=True)
         return Response(serialzer.data)
 
@@ -204,18 +219,19 @@ class UOMDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
         try:
+            article = self.get_object(pk)
             article.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ProtectedError as e:
-            # If the deletion is protected, handle the exception
-            error_message = "This data Linked with other models"
+            print(e)
+            error_message = "This data Linked with other modules"
             return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            # Handle other exceptions
+            #         # Handle other exceptions
             print(e)
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 """Category"""
 
@@ -239,7 +255,7 @@ class CategoryCreateView(APIView):
 
 class AccountsGroupCreateView(APIView):
     def get(self, request):
-        article = AccountsGroup.objects.all().order_by('-id')
+        article = AccountsGroup.objects.all().order_by('-id').filter(isDelete=False)
         serialzer = AccountsGroupSerializer(article, many=True)
         return Response(serialzer.data)
 
@@ -278,7 +294,7 @@ class AccountsGroupDetails(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ProtectedError as e:
             # If the deletion is protected, handle the exception
-            error_message = "This data Linked with other models"
+            error_message = "This data Linked with other modules"
             return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             # Handle other exceptions
@@ -291,7 +307,7 @@ class AccountsGroupDetails(APIView):
 
 class AccountsMasterCreateView(APIView):
     def get(self, request):
-        article = AccountsMaster.objects.all().order_by('-id')
+        article = AccountsMaster.objects.all().order_by('-id').filter(isDelete=False)
         serialzer = AccountsMasterSerializer(article, many=True)
         return Response(serialzer.data)
 
@@ -324,17 +340,16 @@ class AccountsMasterDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-
         try:
             article = self.get_object(pk)
             article.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ProtectedError as e:
-            # If the deletion is protected, handle the exception
-            error_message = "This data Linked with other models"
+            print(e)
+            error_message = "This data Linked with other modules"
             return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            # Handle other exceptions
+            #         # Handle other exceptions
             print(e)
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -350,8 +365,7 @@ class AlternateUnitCreateView(APIView):
 
     def post(self, request):
         serializer = Alternate_unitSerializer(data=request.data)
-        print(serializer.is_valid())
-        print(serializer.errors)
+
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -380,9 +394,18 @@ class AlternateUnitDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 """ItemMaster"""
@@ -396,9 +419,7 @@ class ItemMasterCreateView(APIView):
 
     def post(self, request):
         serializer = ItemMasterSerializer(data=request.data)
-        print(request.data)
-        print(serializer.is_valid())
-        print(serializer.errors)
+
 
         if serializer.is_valid():
             serializer.save()
@@ -427,9 +448,18 @@ class ItemMasterDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 """Store"""
@@ -437,14 +467,12 @@ class ItemMasterDetails(APIView):
 
 class StoreCreateView(APIView):
     def get(self, request):
-        article = Store.objects.all().order_by('-id')
+        article = Store.objects.all().order_by('-id').filter(isDelete=False)
         serialzer = StoreSerializer(article, many=True)
         return Response(serialzer.data)
 
     def post(self, request):
         serializer = StoreSerializer(data=request.data)
-        print(serializer, '---->>>')
-        # print(serializer.errors)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -472,17 +500,16 @@ class StoreDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
         try:
+            article = self.get_object(pk)
             article.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ProtectedError as e:
-            # If the deletion is protected, handle the exception
-
-            error_message = "This data Linked with other models"
+            print(e)
+            error_message = "This data Linked with other modules"
             return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            # Handle other exceptions
+            #         # Handle other exceptions
             print(e)
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -526,9 +553,18 @@ class StockSerialHistoryDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 """BatchNumber"""
@@ -664,13 +700,17 @@ class StockDetails(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 """StockHistoryLog"""
+
+
 class StockHistoryLogCreateView(APIView):
     def get(self, request):
         article = StockHistoryLog.objects.all().order_by('-id')
         serialzer = StockHistoryLogSerializer(article, many=True)
 
         return Response(serialzer.data)
+
 
 """Inventory Approvals"""
 
@@ -733,6 +773,61 @@ class InventoryHandlerDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+"""display_group"""
+
+
+class displayGroupCreateView(APIView):
+    def get(self, request):
+        article = display_group.objects.all().order_by('-id')
+        serialzer = displayGroupSerializer(article, many=True)
+        return Response(serialzer.data)
+
+    def post(self, request):
+        serializer = displayGroupSerializer(data=request.data)
+        # print(serializer)
+        # print(serializer.is_valid())
+        # print(serializer.errors)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class displayGroupDetails(APIView):
+    def get_object(self, pk):
+        try:
+            return display_group.objects.get(pk=pk)
+        except Exception as e:
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, pk):
+        article = self.get_object(pk)
+        serialzer = displayGroupSerializer(article)
+        return Response(serialzer.data)
+
+    def put(self, request, pk):
+        article = self.get_object(pk)
+        serializer = displayGroupSerializer(article, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 """Item Combo"""
 
 
@@ -774,9 +869,18 @@ class ItemComboDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 """Customer Group"""
@@ -817,9 +921,18 @@ class CustomerGroupDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 """Supplier Group"""
@@ -860,9 +973,18 @@ class SupplierGroupDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 """Contact Details"""
@@ -903,9 +1025,18 @@ class ItemContactDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 """Address"""
@@ -946,9 +1077,18 @@ class ItemAddressDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 """Supplier form"""
@@ -1004,9 +1144,18 @@ class ItemSupplierFormDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class CurrencyMasterCreateView(APIView):
@@ -1049,19 +1198,18 @@ class CurrencyMasterDetails(APIView):
             article.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ProtectedError as e:
-            # If the deletion is protected, handle the exception
-            error_message = "This data Linked with other models"
+            print(e)
+            error_message = "This data Linked with other modules"
             return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            # Handle other exceptions
+            #         # Handle other exceptions
             print(e)
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
 class CurrencyExchangeCreateView(APIView):
     def get(self, request):
-        article = CurrencyExchange.objects.all().order_by('-id')
+        article = CurrencyExchange.objects.all().order_by('-id').filter(isDelete=False)
         serialzer = CurrencyExchangeSerializer(article, many=True)
         return Response(serialzer.data)
 
@@ -1076,7 +1224,9 @@ class CurrencyExchangeCreateView(APIView):
 class CurrencyExchangeDetails(APIView):
     def get_object(self, pk):
         try:
-            return CurrencyExchange.objects.get(pk=pk)
+            Currency = CurrencyExchange.objects.get(pk=pk)
+            print(Currency,"""--->>>""")
+            return Currency
         except Exception as e:
             return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
 
@@ -1099,11 +1249,11 @@ class CurrencyExchangeDetails(APIView):
             article.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ProtectedError as e:
-            # If the deletion is protected, handle the exception
-            error_message = "This data Linked with other models"
+            print(e)
+            error_message = "This data Linked with other modules"
             return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            # Handle other exceptions
+            #         # Handle other exceptions
             print(e)
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -1150,11 +1300,72 @@ class SalesOrderItemDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+"""PaymentMode"""
+
+
+class PaymentModeCreateView(APIView):
+    def get(self, request):
+        article = paymentMode.objects.all().order_by('-id')
+        serialzer = PaymentModeSerializer(article, many=True)
+        return Response(serialzer.data)
+
+    def post(self, request):
+        serializer = PaymentModeSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PaymentModeDetails(APIView):
+    def get_object(self, pk):
+        try:
+            return paymentMode.objects.get(pk=pk)
+        except Exception as e:
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, pk):
         article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        serialzer = PaymentModeSerializer(article)
+        return Response(serialzer.data)
 
+    def put(self, request, pk):
+        article = self.get_object(pk)
+        serializer = PaymentModeSerializer(article, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, request, pk):
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 """SalesOrder"""
 
 
@@ -1165,8 +1376,10 @@ class SalesOrderCreateView(APIView):
         return Response(serialzer.data)
 
     def post(self, request):
+        print(request.data)
         serializer = SalesOrderSerializer(data=request.data)
-
+        print(serializer.is_valid())
+        print(serializer.errors)
         if serializer.is_valid():
             serializer.save()
 
@@ -1187,21 +1400,29 @@ class SalesOrderDetails(APIView):
         return Response(serialzer.data)
 
     def put(self, request, pk):
+        print(request.data)
         article = self.get_object(pk)
         serializer = SalesOrderSerializer(article, data=request.data)
 
         if serializer.is_valid():
+            print(serializer.is_valid())
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        article = self.get_object(pk)
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-# test table
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class testStaanTableCreateView(APIView):
@@ -1247,7 +1468,293 @@ class testStaanTableDetails(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# stock statement part start
+class NumberingSeriesCreateView(APIView):
+
+    def get(self, request):
+        article = NumberingSeries.objects.all().order_by('-id').filter(isDelete=False)
+        serialzer = NumberingSeriesSerializer(article, many=True)
+        return Response(serialzer.data)
+
+    def post(self, request):
+        """In same resource, only one item allowed to be true. make others false"""
+        for singleSeries in NumberingSeries.objects.all().filter(isDelete=False).filter(
+                Resource=request.data['Resource']):
+            if singleSeries.Resource == "Pos":
+                if singleSeries.ReSourceIsPosType == "Sample":
+                    if singleSeries.Default:
+                        singleSeries.Default = False
+                        singleSeries.save()
+                elif singleSeries.ReSourceIsPosType == "Sales":
+                    if singleSeries.Default:
+                        singleSeries.Default = False
+                        singleSeries.save()
+        """after change send all data"""
+        article = NumberingSeries.objects.all().order_by('-id').filter(isDelete=False)
+        Change_Data = NumberingSeriesSerializer(article, many=True)
+        serializer = NumberingSeriesSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(Change_Data.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class NumberingSeriesDetails(APIView):
+    def get_object(self, pk):
+        try:
+            return NumberingSeries.objects.get(pk=pk)
+        except Exception as e:
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, pk):
+        article = self.get_object(pk)
+        serialzer = NumberingSeriesSerializer(article)
+        return Response(serialzer.data)
+
+    def put(self, request, pk):
+        article = self.get_object(pk)
+        serializer = NumberingSeriesSerializer(article, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class FinishedGoodsCreateView(APIView):
+    def get(self, request):
+        article = FinishedGoods.objects.all().order_by('-id').filter(isDelete=False)
+        print(article)
+        serialzer = FinishedGoodsSerializer(article, many=True)
+        return Response(serialzer.data)
+
+    def post(self, request):
+        serializer = FinishedGoodsSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FinishedGoodsDetails(APIView):
+    def get_object(self, pk):
+        try:
+            return FinishedGoods.objects.get(pk=pk)
+        except Exception as e:
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, pk):
+        article = self.get_object(pk)
+        serialzer = FinishedGoodsSerializer(article)
+        return Response(serialzer.data)
+
+    def put(self, request, pk):
+        article = self.get_object(pk)
+        serializer = FinishedGoodsSerializer(article, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class RawMaterialCreateView(APIView):
+    def get(self, request):
+        article = RawMaterial.objects.all().order_by('-id').filter(isDelete=False)
+        serialzer = RawMaterialSerializer(article, many=True)
+        return Response(serialzer.data)
+
+    def post(self, request):
+        serializer = RawMaterialSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RawMaterialDetails(APIView):
+    def get_object(self, pk):
+        try:
+            return RawMaterial.objects.get(pk=pk)
+        except Exception as e:
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, pk):
+        article = self.get_object(pk)
+        serialzer = RawMaterialSerializer(article)
+        return Response(serialzer.data)
+
+    def put(self, request, pk):
+        article = self.get_object(pk)
+        serializer = RawMaterialSerializer(article, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ScrapCreateView(APIView):
+    def get(self, request):
+        article = Scrap.objects.all().order_by('-id').filter(isDelete=False)
+        serialzer = ScrapSerializer(article, many=True)
+        return Response(serialzer.data)
+
+    def post(self, request):
+        serializer = ScrapSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ScrapDetails(APIView):
+    def get_object(self, pk):
+        try:
+            return Scrap.objects.get(pk=pk)
+        except Exception as e:
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, pk):
+        article = self.get_object(pk)
+        serialzer = ScrapSerializer(article)
+        return Response(serialzer.data)
+
+    def put(self, request, pk):
+        article = self.get_object(pk)
+        serializer = ScrapSerializer(article, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class RoutingCreateView(APIView):
+    def get(self, request):
+        article =  Routing.objects.all().order_by('-id').filter(isDelete=False)
+        serialzer = RoutingSerializer(article, many=True)
+        return Response(serialzer.data)
+
+    def post(self, request):
+        serializer = RoutingSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BomCreateView(APIView):
+    def get(self, request):
+        article = Bom.objects.all().order_by('-id').filter(isDelete=False)
+        serialzer = BomSerializer(article, many=True)
+        return Response(serialzer.data)
+
+    def post(self, request):
+        serializer = BomSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BomDetails(APIView):
+    def get_object(self, pk):
+        try:
+            return Bom.objects.get(pk=pk)
+        except Exception as e:
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, pk):
+        article = self.get_object(pk)
+        serialzer = BomSerializer(article)
+        return Response(serialzer.data)
+
+    def put(self, request, pk):
+        article = self.get_object(pk)
+        serializer = BomSerializer(article, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            article = self.get_object(pk)
+            article.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError as e:
+            print(e)
+            error_message = "This data Linked with other modules"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            #         # Handle other exceptions
+            print(e)
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+"""stock statement part start"""
+
+
 def process_stock_statement(store_id=None, group_id=None):
     item_master_data = list(ItemMaster.objects.values('id', 'Item_PartCode', 'Item_name', 'Item_Group'))
     store_data = {item['id']: item['StoreName'] for item in list(Store.objects.values('id', 'StoreName'))}
@@ -1263,9 +1770,11 @@ def process_stock_statement(store_id=None, group_id=None):
             'item_group': item_group_data[item['Item_Group']]
         }
         if store_id is None:
-            filtered_data = [(int(stock_item['currentStock']), stock_item['store']) for stock_item in stock_data if stock_item['part_no'] == part_no]
+            filtered_data = [(int(stock_item['currentStock']), stock_item['store']) for stock_item in stock_data if
+                             stock_item['part_no'] == part_no]
         else:
-            filtered_data = [(int(stock_item['currentStock']), stock_item['store']) for stock_item in stock_data if stock_item['part_no'] == part_no and int(stock_item['store']) == int(store_id)]
+            filtered_data = [(int(stock_item['currentStock']), stock_item['store']) for stock_item in stock_data if
+                             stock_item['part_no'] == part_no and int(stock_item['store']) == int(store_id)]
         sum_of_stocks_in_store = 0
         stores = ''
         store_ids = []
@@ -1281,7 +1790,8 @@ def process_stock_statement(store_id=None, group_id=None):
         data_result['store_ids'] = store_ids
         filtered_master_items.append(data_result)
     if group_id:
-        filtered_master_items = [item for item in filtered_master_items if item['item_group'] == item_group_data[int(group_id)]]
+        filtered_master_items = [item for item in filtered_master_items if
+                                 item['item_group'] == item_group_data[int(group_id)]]
     return filtered_master_items
 
 
@@ -1306,13 +1816,14 @@ def process_stock_statement_for_single_item(part_no, store_id=None, group_id=Non
     item_master_dict = model_to_dict(item_master_instance)
     store_data = {item['id']: item['StoreName'] for item in list(Store.objects.values('id', 'StoreName'))}
     item_group_data = {item['id']: item['name'] for item in list(Item_Groups_Name.objects.values('id', 'name'))}
-    stock_data = list(ItemStock.objects.values('id', 'part_no', 'currentStock', 'store',  'BatchNumber', 'Serialnum'))
+    stock_data = list(ItemStock.objects.values('id', 'part_no', 'currentStock', 'store', 'BatchNumber', 'Serialnum'))
     is_serial = item_master_dict['serial']
     is_batch = item_master_dict['Batch_number']
     if store_id is None:
         filtered_data = [stock_item for stock_item in stock_data if stock_item['part_no'] == int(part_no)]
     else:
-        filtered_data = [stock_item for stock_item in stock_data if stock_item['part_no'] == int(part_no) and int(stock_item['store']) == int(store_id)]
+        filtered_data = [stock_item for stock_item in stock_data if
+                         stock_item['part_no'] == int(part_no) and int(stock_item['store']) == int(store_id)]
     stock_statement_data = []
     if is_serial:
         for filtered_item in filtered_data:
@@ -1428,7 +1939,8 @@ def getStockHistory(request):
     if store_id is None:
         stockData = StockHistoryLog.objects.filter(PartNumber=int(part_id), ColumnName="currentStock")
     else:
-        stockData = StockHistoryLog.objects.filter(PartNumber=int(part_id), ColumnName="currentStock", StoreLink=int(store_id))
+        stockData = StockHistoryLog.objects.filter(PartNumber=int(part_id), ColumnName="currentStock",
+                                                   StoreLink=int(store_id))
 
     StockHistoryMasterData = {}
     for StockItem in stockData:
@@ -1463,6 +1975,19 @@ def getStockHistory(request):
 #     return JsonResponse(processed_data, safe=False)
 
 
+class getItemMasterHistory(APIView):
+    def get_object(self, pk):
+        try:
+            return ItemMasterHistory.objects.get(pk=pk)
+        except Exception as e:
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, pk):
+        article = self.get_object(pk)
+        serialzer = ItemMasterHistorySerializer(article)
+        return Response(serialzer.data)
+
+
 def stock_statement_store_group_filter(request):
     if request.method == 'GET':
         try:
@@ -1482,7 +2007,75 @@ def stock_statement_store_group_filter(request):
                 filtered_data = process_stock_statement(store_id, group_id)
 
             return JsonResponse(filtered_data, safe=False)
-        except Exception as e :
+        except Exception as e:
             print(e)
 
 
+def get_item_combo_(request):
+    if request.method == 'GET':
+        item_combo_ids = request.GET.getlist('ids', [])[0].split(',')
+        item_combo_ids = [int(a) for a in item_combo_ids]
+        filtered_objects = Item_Combo.objects.filter(id__in=item_combo_ids).values('id', 'part_number', 'Item_Qty',
+                                                                                   'item_display', 'Is_Mandatory')
+        # print(filtered_objects)
+        if filtered_objects:
+            # filtered_objects = serialize('json', filtered_objects)
+            filtered_objects = list(filtered_objects.values())
+        return JsonResponse(filtered_objects, safe=False)
+
+
+def pos_report_data_filter(event_name, user, start_date, end_date):
+    start_date_obj = datetime.strptime(start_date, "%d-%m-%Y")
+    end_date_obj = datetime.strptime(end_date, "%d-%m-%Y")
+    formatted_start_date = start_date_obj.strftime("%Y-%m-%d")
+    formatted_end_date = end_date_obj.strftime("%Y-%m-%d")
+
+    payment_prefetch = Prefetch('payments', queryset=paymentMode.objects.filter(
+            UpdatedAt__gte=start_date,
+            UpdatedAt__lte=end_date))
+    if not event_name and not user:
+        pos_with_payments = SalesOrder.objects.filter(
+                marketingEvent__name=event_name,
+                date__range=(start_date, end_date)
+        ).prefetch_related(payment_prefetch)
+    elif event_name and not user:
+        pos_with_payments = SalesOrder.objects.filter(
+            marketingEvent=event_name,
+            order_date__gte=start_date,
+            order_date__lte=end_date
+        ).prefetch_related('payment').all()
+    elif not event_name and user:
+        pos_with_payments = SalesOrder.objects.filter(
+            marketingEvent=event_name,
+            order_date__gte=start_date,
+            order_date__lte=end_date
+        ).prefetch_related('payment').all()
+    else:
+        pos_with_payments = SalesOrder.objects.filter(
+            marketingEvent=event_name,
+            order_date__gte=start_date,
+            order_date__lte=end_date
+        ).prefetch_related('payment').all()
+
+    print(pos_with_payments)
+    instance_dict = model_to_dict(pos_with_payments[0])
+    print(instance_dict)
+    pass
+
+
+def get_report_details(request):
+    if request.method == 'GET':
+        try:
+            event_name = request.GET.get('eventname')
+            user = request.GET.get('user')
+            start_date = request.GET.get('startdate')
+            end_date = request.GET.get('enddate')
+            if event_name == 'null' or event_name == 'all':
+                event_name = None
+            if user == 'null' or user == 'all':
+                user = None
+            pos_report_data_filter(event_name, user, start_date, end_date)
+            return JsonResponse([], safe=False)
+        except Exception as e:
+            print(e)
+    pass

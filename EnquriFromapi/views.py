@@ -19,7 +19,8 @@ Client_ID = "52a3b712-cbab-461d-a03d-a6b234a9ed21"
 
 
 def send_email(request, to, pdf_file_paths):
-    subject = ''
+    print(pdf_file_paths)
+    subject = 'Thanks For Your Visit - STAAN'
     body = """Dear Sir/Madam,
 
 It’s very nice meeting you at conference.
@@ -61,7 +62,7 @@ T: +91-422 2533806 | +91-422 2531008 | +91-422 2537440"""
     try:
         email.send()
         print("Email sent successfully.")
-        print("--->>>5")
+        # print("--->>>5")
     except Exception as e:
         print(f"Error sending email: {e}")
 
@@ -143,29 +144,28 @@ class EnquiryApi(APIView):
         return Response(serializer_datas.data)
 
     def post(self, request):
-        serializer = EnquirySerializers(data=request.data)
-        print(serializer)
-        print(serializer.is_valid())
-        print(serializer.errors)
+        data_dict = request.data.copy()
+        try:
+            data_dict['Interesteds'] = data_dict.pop('Interesteds[]')[0]
+        except:
+            pass
+        serializer = EnquirySerializers(data=data_dict)
 
         if serializer.is_valid():
             serializer.save()
-
             email_value = serializer.validated_data.get('Email')
             intrested = serializer.validated_data.get('Interesteds')
             BASE_DIR = Path(__file__).resolve().parent.parent
             pdf_path = BASE_DIR / "PDF"
             intrested_list = []
             for data in (intrested):
-                # print(pdf_path / str(data))
                 data = str(data) + ".pdf"
 
                 intrested_list.append(pdf_path / str(data))
             try:
                 send_email(request, email_value, intrested_list)
             except Exception as e:
-                print(e + ">>>>>")
-            print(serializer.data)
+                pass
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -289,7 +289,7 @@ class conferenceDetails(APIView):
         except ProtectedError as e:
             # If the deletion is protected, handle the exception
 
-            error_message = "This data Linked with other models"
+            error_message = "This data Linked with other modules"
             return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             # Handle other exceptions

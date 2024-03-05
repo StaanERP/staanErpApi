@@ -25,8 +25,8 @@ SECRET_KEY = 'django-insecure-8yl-hpyid+th##7(-8h-dhom9m9^q*8+uesbvybfc50b-t9v4h
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["52.66.208.179",'www.maxnik.org',"maxnik.org"]
-# ALLOWED_HOSTS = ["*"]
+# ALLOWED_HOSTS = ["52.66.208.179",'www.maxnik.org',"maxnik.org"]
+ALLOWED_HOSTS = ["*"]
 # SECURE_SSL_REDIRECT = True
 # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     'itemmaster',
+    'graphene_django',
     'rest_framework_swagger',  # Swagger
     'drf_yasg',  # Yet Another Swagger generator
     'django_dbml' # django model to dbml
@@ -59,11 +60,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 CORS_ALLOWED_ORIGINS = [
-   'https://www.staanerp.com',
-    # "http://localhost:3000",
+
+    "http://localhost:3000",
 
 
 ]
+#    # 'https://www.staanerp.com',
 CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOW_METHODS = [
@@ -82,7 +84,9 @@ CORS_ALLOW_HEADERS = [
     'Origin',
     'User-Agent',
 ]
-
+# GRAPHENE = {
+#     "SCHEMA":  "schema.schema"
+# }
 CORS_ALLOW_CREDENTIALS = True
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -92,7 +96,7 @@ EMAIL_USE_TLS = True
 # EMAIL_HOST_USER = 'jegathish.e@staan.in'  # Your Outlook email address
 # EMAIL_HOST_PASSWORD = 'Wax83711'
 EMAIL_HOST_USER = 'marketing@staan.in'  # Your Outlook email address
-EMAIL_HOST_PASSWORD = 'Gub41578'
+EMAIL_HOST_PASSWORD = 'Alb#1971'
 ROOT_URLCONF = 'Staanenquiryfromwithazure.urls'
 
 TEMPLATES = [
@@ -117,22 +121,22 @@ WSGI_APPLICATION = 'Staanenquiryfromwithazure.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Staan2',
-        'USER': 'StaanErp',
-        'PASSWORD': 'StaanDev',
-        'HOST': 'staandatabase-2.cjkxnr9xutf0.ap-south-1.rds.amazonaws.com',
-        'PORT': '5432'
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'Staan2',
+#         'USER': 'StaanErp',
+#         'PASSWORD': 'StaanDev',
+#         'HOST': 'staandatabase-2.cjkxnr9xutf0.ap-south-1.rds.amazonaws.com',
+#         'PORT': '5432'
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
