@@ -4,9 +4,9 @@ from django.urls import path, include
 
 from django.conf import settings
 from django.conf.urls.static import static
-
+from Staanenquiryfromwithazure.schema import schema
 from  itemmaster.views import *
-from .schema import schema
+
 from graphene_django.views import GraphQLView
 
 urlpatterns = [

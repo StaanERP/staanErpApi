@@ -15,7 +15,6 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -25,8 +24,8 @@ SECRET_KEY = 'django-insecure-8yl-hpyid+th##7(-8h-dhom9m9^q*8+uesbvybfc50b-t9v4h
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# ALLOWED_HOSTS = ["52.66.208.179",'www.maxnik.org',"maxnik.org"]
-ALLOWED_HOSTS = ["52.66.208.179",'www.maxnik.org',"maxnik.org"]
+ALLOWED_HOSTS = ["52.66.208.179", 'www.maxnik.org', "maxnik.org"]
+# ALLOWED_HOSTS = ["*"]
 # SECURE_SSL_REDIRECT = True
 # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -46,7 +45,7 @@ INSTALLED_APPS = [
     'graphene_django',
     'rest_framework_swagger',  # Swagger
     'drf_yasg',  # Yet Another Swagger generator
-    'django_dbml' # django model to dbml
+    'django_dbml'  # django model to dbml
 ]
 
 MIDDLEWARE = [
@@ -60,9 +59,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 CORS_ALLOWED_ORIGINS = [
-"https://www.staanerp.com"
+    "https://www.staanerp.com"
     # "http://localhost:3000",
-
+    # "http://localhost:3001",
 
 ]
 CORS_ALLOW_ALL_ORIGINS = False
@@ -114,7 +113,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Staanenquiryfromwithazure.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
@@ -153,7 +151,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
@@ -165,7 +162,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
@@ -176,7 +172,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 USE_L10N = False
 

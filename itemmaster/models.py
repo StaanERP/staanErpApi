@@ -121,9 +121,8 @@ def SaveToHistory(instance, action, model_class):
         original_instance = model_class.objects.get(pk=instance.pk)
         history_record = ItemMasterHistory(
             Action=action,
-            SavedBy=instance.createdby  # Assuming you want to save the user who modified the instance
+            SavedBy=instance.created_by  # Assuming you want to save the user who modified the instance
         )
-    print(action)
     with transaction.atomic():
         for field in instance._meta.fields:
             field_name = field.name
@@ -142,7 +141,7 @@ def SaveToHistory(instance, action, model_class):
 
         history_record.save()
 
-        instance.HistoryDetails.add(history_record)
+        instance.history_details.add(history_record)
     return instance
 
 
@@ -193,22 +192,35 @@ class NumberingSeries(models.Model):
         super(NumberingSeries, self).save(*args, **kwargs)
 
 
+class HsnType(models.Model):
+    name = models.CharField(max_length=5)
+    CreatedAt = models.DateTimeField(auto_now_add=True)
+    UpdatedAt = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+
+class GstRate(models.Model):
+    rate = models.IntegerField()
+    CreatedAt = models.DateTimeField(auto_now_add=True)
+    UpdatedAt = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+
 class Hsn(models.Model):
-    hsn_type = models.CharField(max_length=5, choices=hsn_types, default=1)
+    hsn_types = models.ForeignKey(HsnType, on_delete=models.PROTECT, null=True, blank=True, default=1)
     hsn_code = models.IntegerField(unique=True)
-    Description = models.TextField(max_length=200)
-    gst_rate = models.IntegerField(choices=gst_rate, null=True, blank=True)
+    description = models.TextField(max_length=200)
     cess_rate = models.IntegerField(null=True, blank=True, )
     rcm = models.BooleanField(default=0)
     itc = models.BooleanField(default=1)
+    gst_rates = models.ForeignKey(GstRate, on_delete=models.PROTECT, null=True, blank=True, default=1)
     modified_by = models.ForeignKey(User, related_name="modified_Hsn", on_delete=models.PROTECT, null=True,
                                     blank=True)
-    HistoryDetails = models.ManyToManyField(ItemMasterHistory, blank=True)
-    createdby = models.ForeignKey(User, related_name="created_Hsn", on_delete=models.PROTECT, null=True,
-                                  blank=True)
-    isDelete = models.BooleanField(default=False)
-    CreatedAt = models.DateTimeField(auto_now_add=True)
-    UpdatedAt = models.DateTimeField(auto_now=True)
+
+    history_details = models.ManyToManyField(ItemMasterHistory, blank=True)
+    created_by = models.ForeignKey(User, related_name="created_Hsn", on_delete=models.PROTECT, null=True,
+                                   blank=True)
+    is_delete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return str(self.hsn_code)
@@ -225,15 +237,15 @@ class Hsn(models.Model):
 
 
 class Item_Groups_Name(models.Model):
-    name = models.CharField(max_length=100)
-    Parent_Group = models.CharField(max_length=100, null=True, blank=True)
-    hsn = models.ForeignKey(Hsn, null=True, blank=True, on_delete=models.PROTECT)
-    HistoryDetails = models.ManyToManyField(ItemMasterHistory, blank=True)
+    name = models.CharField(max_length=100, unique=True)
+    parent_group = models.ForeignKey("Item_Groups_Name", null=True, blank=True, on_delete=models.PROTECT)
+    hsn = models.ForeignKey (Hsn, null=True, blank=True, on_delete=models.PROTECT)
+    history_details = models.ManyToManyField(ItemMasterHistory, blank=True)
     modified_by = models.ForeignKey(User, related_name="IGmodified", on_delete=models.PROTECT, null=True, blank=True)
-    createdby = models.ForeignKey(User, related_name="IGcreate", on_delete=models.PROTECT, null=True, blank=True)
-    isDelete = models.BooleanField(default=False)
-    CreatedAt = models.DateTimeField(auto_now_add=True)
-    UpdatedAt = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, related_name="IGcreate", on_delete=models.PROTECT, null=True, blank=True)
+    is_delete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
         self.name = self.name
@@ -253,16 +265,16 @@ class Item_Groups_Name(models.Model):
 
 
 class UOM(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     e_way_bill_uom = models.CharField(choices=e_way_bill, max_length=50, null=True, blank=True)
-    Description = models.TextField(max_length=300, null=True, blank=True)
+    description = models.TextField(max_length=300, null=True, blank=True)
     modified_by = models.ForeignKey(User, related_name="ModifiedUOM", on_delete=models.SET_NULL, null=True, blank=True)
-    createdby = models.ForeignKey(User, related_name="createUOM", on_delete=models.CASCADE, null=True,
-                                  blank=True)
-    isDelete = models.BooleanField(default=False)
-    CreatedAt = models.DateTimeField(auto_now_add=True)
-    UpdatedAt = models.DateTimeField(auto_now=True)
-    HistoryDetails = models.ManyToManyField(ItemMasterHistory, blank=True)
+    created_by = models.ForeignKey(User, related_name="createUOM", on_delete=models.CASCADE, null=True,
+                                   blank=True)
+    is_delete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    history_details = models.ManyToManyField(ItemMasterHistory, blank=True)
 
     def __str__(self):
         return self.name
@@ -305,27 +317,27 @@ class Category(models.Model):
 
 
 class AccountsGroup(models.Model):
-    Accounts_Group_Name = models.CharField(unique=True, max_length=50)
-    Accounts_Type = models.CharField(choices=Accountsgroup_Type, max_length=20)
-    Group_Active = models.BooleanField(default=True)
+    accounts_group_name = models.CharField(unique=True, max_length=50)
+    accounts_type = models.CharField(choices=Accountsgroup_Type, max_length=20)
+    group_active = models.BooleanField(default=True)
     modified_by = models.ForeignKey(User, related_name="modified_AccountsGroups", on_delete=models.PROTECT, null=True,
                                     blank=True)
-    HistoryDetails = models.ManyToManyField(ItemMasterHistory, blank=True)
-    createdby = models.ForeignKey(User, related_name="created_AccountsGroups", on_delete=models.PROTECT, null=True,
+    history_details = models.ManyToManyField(ItemMasterHistory, blank=True)
+    created_by = models.ForeignKey(User, related_name="created_AccountsGroups", on_delete=models.PROTECT, null=True,
                                   blank=True)
-    isDelete = models.BooleanField(default=False)
-    CreatedAt = models.DateTimeField(auto_now_add=True)
-    UpdatedAt = models.DateTimeField(auto_now=True)
+    is_delete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.Accounts_Group_Name
+        return self.accounts_group_name
 
     def save(self, *args, **kwargs):
-        self.Accounts_Group_Name = self.Accounts_Group_Name
+        self.accounts_group_name = self.accounts_group_name
 
         # Check if a record with the same normalized name already exists
         if AccountsGroup.objects.exclude(pk=self.pk).filter(
-                Accounts_Group_Name__iexact=self.Accounts_Group_Name).exists():
+                accounts_group_name__iexact=self.accounts_group_name).exists():
             raise ValidationError("Accounts_Group_Name must be unique.")
 
         # Save the object after performing necessary operations
@@ -339,32 +351,31 @@ class AccountsGroup(models.Model):
 
 
 class AccountsMaster(models.Model):
-    Accounts_Name = models.CharField(unique=True, max_length=50, )
-    Accounts_Group_Name = models.ForeignKey(AccountsGroup, null=True, blank=True, on_delete=models.PROTECT)
-    AccountType = models.CharField(choices=Accounts_Type, max_length=20, null=True, blank=True)
-    Accounts_Active = models.BooleanField(default=True)
-    GST_Applicable = models.BooleanField(default=False)
-    TDS = models.BooleanField(default=False)
-    Allow_Payment = models.BooleanField(default=False)
-    Allow_Receipt = models.BooleanField(default=False)
-    Enforce_position_balance = models.BooleanField(default=False)
+    accounts_name = models.CharField(unique=True, max_length=50, )
+    accounts_group_name = models.ForeignKey(AccountsGroup, null=True, blank=True, on_delete=models.PROTECT)
+    account_type = models.CharField(choices=Accounts_Type, max_length=20, null=True, blank=True)
+    accounts_active = models.BooleanField(default=True)
+    gst_applicable = models.BooleanField(default=False)
+    tds = models.BooleanField(default=False)
+    allow_payment = models.BooleanField(default=False)
+    allow_receipt = models.BooleanField(default=False)
+    enforce_position_balance = models.BooleanField(default=False)
     modified_by = models.ForeignKey(User, related_name="AMcreate", on_delete=models.PROTECT, null=True, blank=True)
-    HistoryDetails = models.ManyToManyField(ItemMasterHistory, blank=True)
-    createdby = models.ForeignKey(User, related_name="Amcreate", on_delete=models.PROTECT, null=True, blank=True)
-    isDelete = models.BooleanField(default=False)
-    CreatedAt = models.DateTimeField(auto_now_add=True)
-    UpdatedAt = models.DateTimeField(auto_now=True)
+    history_details = models.ManyToManyField(ItemMasterHistory, blank=True)
+    created_by = models.ForeignKey(User, related_name="Amcreate", on_delete=models.PROTECT, null=True, blank=True)
+    is_delete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.Accounts_Name
+        return self.accounts_name
 
     def save(self, *args, **kwargs):
-        self.Accounts_Name = self.Accounts_Name
+        self.accounts_name = self.accounts_name
 
         # Check if a record with the same normalized name already exists
-        if AccountsMaster.objects.exclude(pk=self.pk).filter(Accounts_Name__iexact=self.Accounts_Name).exists():
+        if AccountsMaster.objects.exclude(pk=self.pk).filter(accounts_name__iexact=self.accounts_name).exists():
             raise ValidationError("Accounts Name must be unique.")
-
         # Save the object after performing necessary operations
         if self.pk is not None:
             instance = SaveToHistory(self, "Update", AccountsMaster)
@@ -377,35 +388,38 @@ class AccountsMaster(models.Model):
 
 class Alternate_unit(models.Model):
     addtional_unit = models.ForeignKey(UOM, on_delete=models.PROTECT)
-    conversion_Factor = models.DecimalField(max_digits=10, decimal_places=3)
-    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-
+    conversion_factor = models.DecimalField(max_digits=10, decimal_places=3)
+    modified_by = models.ForeignKey(User, related_name="Aumodified", on_delete=models.SET_NULL, null=True, blank=True)
+    created_by = models.ForeignKey(User, related_name="Aucreate", on_delete=models.PROTECT, null=True, blank=True)
+    is_delete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     def __str__(self):
         return str(self.addtional_unit)
 
 
 class Store(models.Model):
-    StoreName = models.CharField(max_length=100)
-    StoreAccount = models.ForeignKey(AccountsMaster, null=True, blank=True, on_delete=models.PROTECT)
-    StoreInCharge = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    store_name = models.CharField(max_length=100)
+    store_account = models.ForeignKey(AccountsMaster, null=True, blank=True, on_delete=models.PROTECT)
+    store_incharge = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     matained = models.BooleanField(default=True)
-    Action = models.BooleanField(default=True)
-    HistoryDetails = models.ManyToManyField(ItemMasterHistory, blank=True)
+    action = models.BooleanField(default=True)
+    history_details = models.ManyToManyField(ItemMasterHistory, blank=True)
     modified_by = models.ForeignKey(User, related_name="Store_modified", on_delete=models.SET_NULL, null=True,
                                     blank=True)
-    createdby = models.ForeignKey(User, related_name="Store_create", on_delete=models.CASCADE, null=True, blank=True)
-    isDelete = models.BooleanField(default=False)
-    CreatedAt = models.DateTimeField(auto_now_add=True)
-    UpdatedAt = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, related_name="Store_create", on_delete=models.CASCADE, null=True, blank=True)
+    is_delete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.StoreName
+        return self.store_name
 
     def save(self, *args, **kwargs):
-        self.StoreName = self.StoreName
+        self.store_name = self.store_name
 
         # Check if a record with the same normalized name already exists
-        if Store.objects.exclude(pk=self.pk).filter(StoreName__iexact=self.StoreName).exists():
+        if Store.objects.exclude(pk=self.pk).filter(store_name__iexact=self.store_name).exists():
             raise ValidationError("Name must be unique.")
 
         # Save the object after performing necessary operations
@@ -421,7 +435,6 @@ class Store(models.Model):
         return self
 
 
-
 """Item combo"""
 
 
@@ -434,13 +447,17 @@ class display_group(models.Model):
 
 
 class Item_Combo(models.Model):
-    SNo = models.IntegerField(null=True, blank=True)
+    s_no = models.IntegerField(null=True, blank=True)
     part_number = models.ForeignKey('ItemMaster', on_delete=models.PROTECT)
-    Item_Qty = models.DecimalField(max_digits=10, decimal_places=3)
+    item_qty = models.DecimalField(max_digits=10, decimal_places=3)
     item_display = models.ForeignKey(display_group, on_delete=models.CASCADE, null=True, blank=True)
-    Is_Mandatory = models.BooleanField(default=True)
-    Savedby = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    createdat = models.DateField(auto_now_add=True)
+    is_mandatory = models.BooleanField(default=True)
+    modified_by = models.ForeignKey(User, related_name="icmodified", on_delete=models.PROTECT, null=True, blank=True)
+
+    created_by = models.ForeignKey(User, related_name="iccreate", on_delete=models.PROTECT, null=True, blank=True)
+    is_delete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.part_number.Item_name
@@ -495,59 +512,62 @@ class SupplierGroups(models.Model):
         return self
 
 
-class contact_detalis(models.Model):
-    Contact_Person_Name = models.CharField(max_length=100)
-    Salutation = models.CharField(choices=salutation, max_length=10)
-    Email = models.EmailField(null=True, blank=True)
-    Phone_number = models.CharField(max_length=20)
-    Default = models.BooleanField(default=False)
-    WhatsappNo = models.CharField(null=True, blank=True, max_length=20)
-    OtherNo = models.IntegerField(null=True, blank=True)
+class ContactDetalis(models.Model):
+    contact_person_name = models.CharField(max_length=100)
+    salutation = models.CharField(choices=salutation, max_length=10)
+    email = models.EmailField(null=True, blank=True)
+    phone_number = models.CharField(max_length=20)
+    default = models.BooleanField(default=False)
+    whatsapp_no = models.CharField(null=True, blank=True, max_length=20)
+    other_no = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return self.Contact_Person_Name
 
 
-class company_address(models.Model):
+class CompanyAddress(models.Model):
     address_type = models.CharField(choices=address_types, max_length=30, null=True, blank=True)
-    Address_Line_1 = models.CharField(max_length=100)
-    Address_Line_2 = models.CharField(max_length=100, null=True, blank=True)
-    City = models.CharField(max_length=100)
+    address_line_1 = models.CharField(max_length=100)
+    address_line_2 = models.CharField(max_length=100, null=True, blank=True)
+    city = models.CharField(max_length=100)
     pincode = models.IntegerField()
-    State = models.CharField(max_length=100)
-    Country = models.CharField(max_length=100)
-    Default = models.BooleanField(default=False)
+    state = models.CharField(max_length=100)
+    country = models.CharField(max_length=100)
+    default = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.address_type) + str(self.Address_Line_1)
 
 
-class Supplier_Form_Data(models.Model):
-    Company_Name = models.CharField(max_length=100, unique=True)
-    Legal_Name = models.CharField(max_length=100, )
-    Customer = models.BooleanField()
-    Supplier = models.BooleanField()
-    Transporter = models.BooleanField()
-    TransporterId = models.CharField(max_length=100, null=True, blank=True)
-    GSTIN_Type = models.CharField(choices=gst_type, max_length=50)
-    GSTIN = models.CharField(max_length=15, unique=True)
-    TCS = models.CharField(choices=tcs, max_length=10)
-    Pan_no = models.CharField(max_length=100, unique=True)
-    contact = models.ManyToManyField(contact_detalis)
-    address = models.ManyToManyField(company_address)
+class SupplierFormData(models.Model):
+    company_name = models.CharField(max_length=100, unique=True)
+    legal_name = models.CharField(max_length=100, )
+    customer = models.BooleanField()
+    supplier = models.BooleanField()
+    transporter = models.BooleanField()
+    transporterId = models.CharField(max_length=100, null=True, blank=True)
+    gstin_type = models.CharField(choices=gst_type, max_length=50)
+    gstin = models.CharField(max_length=15, unique=True)
+    tcs = models.CharField(choices=tcs, max_length=10)
+    pan_no = models.CharField(max_length=100, unique=True)
+    contact = models.ManyToManyField(ContactDetalis)
+    address = models.ManyToManyField(CompanyAddress)
     active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True, )
-    Saved_by = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="Saved_by", null=True, blank=True)
-
     """customer"""
     customer_group = models.ForeignKey(CustomerGroups, on_delete=models.SET_NULL, null=True, blank=True)
     sales_person = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="salesPerson", null=True, blank=True)
     customer_credited_period = models.IntegerField(null=True, blank=True)
     credited_limit = models.IntegerField(null=True, blank=True)
-
     """Supplier"""
     supplier_group = models.ForeignKey(SupplierGroups, on_delete=models.CASCADE, null=True, blank=True)
     supplier_credited_period = models.IntegerField(null=True, blank=True)
+    history_details = models.ManyToManyField(ItemMasterHistory, blank=True)
+    modified_by = models.ForeignKey(User, related_name="Supplier_modified", on_delete=models.SET_NULL, null=True,
+                                    blank=True)
+    created_by = models.ForeignKey(User, related_name="Supplier_create", on_delete=models.CASCADE, null=True, blank=True)
+    is_delete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return self.Company_Name
@@ -559,81 +579,92 @@ class Supplier_Form_Data(models.Model):
         self.GSTIN = self.GSTIN
         self.Pan_no = self.Pan_no
         if self.TransporterId != "":
-            if Supplier_Form_Data.objects.exclude(pk=self.pk).filter(TransporterId__iexact=self.TransporterId).exists():
+            if SupplierFormData.objects.exclude(pk=self.pk).filter(TransporterId__iexact=self.TransporterId).exists():
                 raise ValidationError("Transporter Id must be unique.")
-        if Supplier_Form_Data.objects.exclude(pk=self.pk).filter(Company_Name__iexact=self.Company_Name).exists():
+        if SupplierFormData.objects.exclude(pk=self.pk).filter(Company_Name__iexact=self.Company_Name).exists():
             raise ValidationError("Company Name must be unique.")
 
-        super(Supplier_Form_Data, self).save(*args, **kwargs)
+        super(SupplierFormData, self).save(*args, **kwargs)
         return self
 
 
+class ItemType(models.Model):
+    name = models.CharField(max_length=10)
+
+    def __str__(self):
+        return str(self.name)
+
+
+class Item_Indicator(models.Model):
+    name = models.CharField(max_length=10)
+
+
 class ItemMaster(models.Model):
-    Item_PartCode = models.CharField(unique=True, max_length=40)
-    Item_name = models.CharField(unique=True, max_length=100)
-    Description = models.TextField(max_length=300, null=True, blank=True)
-    Item_type = models.CharField(choices=item_types, null=True, blank=True, max_length=10)
-    Item_UOM = models.ForeignKey(UOM, related_name="unit", on_delete=models.PROTECT, null=True, blank=True)
-    Item_Group = models.ForeignKey(Item_Groups_Name, null=True, related_name="group", blank=True,
+    item_part_code = models.CharField(unique=True, max_length=40)
+    item_name = models.CharField(unique=True, max_length=100)
+    description = models.TextField(max_length=300, null=True, blank=True)
+    item_types = models.ForeignKey(ItemType, on_delete=models.PROTECT, null=True, blank=True)
+    item_uom = models.ForeignKey(UOM, related_name="unit", on_delete=models.PROTECT, null=True, blank=True)
+    item_group = models.ForeignKey(Item_Groups_Name, null=True, related_name="group", blank=True,
                                    on_delete=models.PROTECT)
-    Alternate_uom = models.ManyToManyField(Alternate_unit, blank=True)
-    Item_Indicator = models.CharField(choices=Item_Indicators, max_length=10, null=True, blank=True)
+    alternate_uom = models.ManyToManyField(Alternate_unit, blank=True)
+    item_indicators = models.ForeignKey(Item_Indicator, on_delete=models.PROTECT, null=True, blank=True)
     category = models.ForeignKey(Category, related_name="Category", on_delete=models.CASCADE, null=True, blank=True)
-    supplierData = models.ForeignKey(Supplier_Form_Data, on_delete=models.CASCADE, null=True, blank=True)
-    '''Purchase'''
-    Purchase_uom = models.ForeignKey(UOM, related_name="uom", on_delete=models.PROTECT, null=True, blank=True)
-    Item_Cost = models.IntegerField(null=True, blank=True)
-    Item_Safe_Stock = models.IntegerField(null=True, blank=True)
-    Item_Order_Qty = models.IntegerField(null=True, blank=True)
-    Item_Leadtime = models.IntegerField(null=True, blank=True)
-    Total_Stock = models.DecimalField(max_digits=10, decimal_places=3)
-    Rejected_Stock = models.DecimalField(max_digits=10, decimal_places=3)
-    '''sell'''
-    Item_Mrp = models.FloatField(null=True, blank=True)
-    Item_min_price = models.FloatField(null=True, blank=True)
-    Item_Sales_Account = models.ForeignKey(AccountsMaster, related_name="Accounts_Master_Sales_Account",
+    supplier_data = models.ForeignKey(SupplierFormData, on_delete=models.CASCADE, null=True, blank=True)
+    ''' Purchase '''
+    purchase_uom = models.ForeignKey(UOM, related_name="uom", on_delete=models.PROTECT, null=True, blank=True)
+    item_cost = models.IntegerField(null=True, blank=True)
+    item_safe_stock = models.IntegerField(null=True, blank=True)
+    item_order_qty = models.IntegerField(null=True, blank=True)
+    item_lead_time = models.IntegerField(null=True, blank=True)
+    total_stock = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
+    rejected_stock = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
+    ''' sell '''
+    item_mrp = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
+    item_min_price = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
+    item_sales_account = models.ForeignKey(AccountsMaster, related_name="Accounts_Master_Sales_Account",
                                            on_delete=models.PROTECT, null=True, blank=True)
-    Item_Purchase_Account = models.ForeignKey(AccountsMaster, related_name="Accounts_Master_Purchase_Account",
+    item_purchase_account = models.ForeignKey(AccountsMaster, related_name="Accounts_Master_Purchase_Account",
                                               on_delete=models.PROTECT, null=True, blank=True)
-    Item_HSN = models.ForeignKey(Hsn, on_delete=models.PROTECT, null=True, blank=True)
-    Keep_stock = models.BooleanField(default=0)
+    item_hsn = models.ForeignKey(Hsn, on_delete=models.PROTECT, null=True, blank=True)
+    keep_stock = models.BooleanField(default=0)
     sell_on_mrp = models.BooleanField(default=False)
     '''serial number'''
     serial = models.BooleanField(default=0)
     serial_auto_gentrate = models.BooleanField(default=False)
-    Serial_format = models.CharField(max_length=30, null=True, blank=True)
-    Serial_starting = models.IntegerField(null=True, blank=True)
+    serial_format = models.CharField(max_length=30, null=True, blank=True)
+    serial_starting = models.IntegerField(null=True, blank=True)
 
     '''batch number'''
-    Batch_number = models.BooleanField(default=False)
+    batch_number = models.BooleanField(default=False)
 
     '''Service'''
-    Service = models.BooleanField(default=False)
-    Item_Warranty_based = models.CharField(choices=Item_Warranty_base_on, null=True, blank=True, max_length=20)
-    Item_Installation = models.BooleanField(default=False)
-    Invoicedate = models.DateField(null=True, blank=True)
+    service = models.BooleanField(default=False)
+    item_warranty_based = models.CharField(choices=Item_Warranty_base_on, null=True, blank=True, max_length=20)
+    item_installation = models.BooleanField(default=False)
+    invoice_date = models.DateField(null=True, blank=True)
     installation_data = models.DateField(null=True, blank=True)
-    Item_Combo_bool = models.BooleanField(default=False)
-    Item_Combo_data = models.ManyToManyField(Item_Combo, blank=True)
-    Item_Barcode = models.BooleanField(default=False)
-    Item_Active = models.BooleanField(default=True)
+    item_combo_bool = models.BooleanField(default=False)
+    item_combo_data = models.ManyToManyField(Item_Combo, blank=True)
+    item_barcode = models.BooleanField(default=False)
+    item_active = models.BooleanField(default=True)
     item_qc = models.BooleanField(default=False)
     modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    createdby = models.ForeignKey(User, related_name="createItemmaster", on_delete=models.CASCADE, null=True,
-                                  blank=True)
-    isDelete = models.BooleanField(default=False)
-    CreatedAt = models.DateTimeField(auto_now_add=True)
-    UpdatedAt = models.DateTimeField(auto_now=True)
-    HistoryDetails = models.ManyToManyField(ItemMasterHistory, blank=True)
+    created_by = models.ForeignKey(User, related_name="createItemmaster", on_delete=models.CASCADE, null=True,
+                                   blank=True)
+    is_delete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    history_details = models.ManyToManyField(ItemMasterHistory, blank=True)
 
     def save(self, *args, **kwargs):
-        self.Item_PartCode = self.Item_PartCode
+        self.item_part_code = self.item_part_code
         # Check if a record with the same normalized name already exists
-        if ItemMaster.objects.exclude(pk=self.pk).filter(Item_PartCode__iexact=self.Item_PartCode).exists():
+        if ItemMaster.objects.exclude(pk=self.pk).filter(item_part_code__iexact=self.item_part_code).exists():
             raise ValidationError("PartCode must be unique.")
-        self.Item_name = self.Item_name.title()
+        self.Item_name = self.item_name.title()
         # Check if a record with the same normalized name already exists
-        if ItemMaster.objects.exclude(pk=self.pk).filter(Item_name__iexact=self.Item_name).exists():
+        if ItemMaster.objects.exclude(pk=self.pk).filter(item_name__iexact=self.item_name).exists():
             raise ValidationError("Item Name must be unique.")
         # Save the object after performing necessary operations
 
@@ -647,7 +678,7 @@ class ItemMaster(models.Model):
         return instance
 
     def __str__(self):
-        return self.Item_PartCode
+        return self.item_part_code
 
 
 class SerialNumbers(models.Model):
@@ -744,6 +775,7 @@ class StockHistoryLog(models.Model):
 
 
 class ItemInventoryApproval(models.Model):
+    """Stock statement"""
     part_no = models.ForeignKey(ItemMaster, on_delete=models.PROTECT)
     qty = models.CharField(max_length=50)
     Serialnum = models.ManyToManyField(SerialNumbers, blank=True)
@@ -800,7 +832,7 @@ class CurrencyMaster(models.Model):
     Active = models.BooleanField(default=True)
     modified_by = models.ForeignKey(User, related_name="modified_CurrencyMaster", on_delete=models.PROTECT, null=True,
                                     blank=True)
-    HistoryDetails = models.ManyToManyField(ItemMasterHistory, blank=True)
+    history_details = models.ManyToManyField(ItemMasterHistory, blank=True)
     createdby = models.ForeignKey(User, related_name="created_CurrencyMaster", on_delete=models.PROTECT, null=True,
                                   blank=True)
     isDelete = models.BooleanField(default=False)
@@ -829,7 +861,7 @@ class CurrencyExchange(models.Model):
     Date = models.DateField(auto_now=True)
     modified_by = models.ForeignKey(User, related_name="modified_CurrencyExchange", on_delete=models.PROTECT, null=True,
                                     blank=True)
-    HistoryDetails = models.ManyToManyField(ItemMasterHistory, blank=True)
+    history_details = models.ManyToManyField(ItemMasterHistory, blank=True)
     createdby = models.ForeignKey(User, related_name="created_CurrencyExchange", on_delete=models.PROTECT, null=True,
                                   blank=True)
     isDelete = models.BooleanField(default=False)
@@ -905,12 +937,12 @@ class SalesOrder(models.Model):
     City = models.CharField(max_length=50, null=True, blank=True)
     State = models.CharField(max_length=50, null=True, blank=True)
     Remarks = models.CharField(max_length=200, null=True, blank=True)
-    customerName = models.ForeignKey(Supplier_Form_Data, null=True, blank=True, on_delete=models.PROTECT)
-    BillingAddress = models.ForeignKey(company_address, related_name="BillingAddress", null=True, blank=True,
+    customerName = models.ForeignKey(SupplierFormData, null=True, blank=True, on_delete=models.PROTECT)
+    BillingAddress = models.ForeignKey(CompanyAddress, related_name="BillingAddress", null=True, blank=True,
                                        on_delete=models.PROTECT)
-    DeliverAddress = models.ForeignKey(company_address, related_name="DeliverAddress", null=True, blank=True,
+    DeliverAddress = models.ForeignKey(CompanyAddress, related_name="DeliverAddress", null=True, blank=True,
                                        on_delete=models.PROTECT)
-    contactPerson = models.ForeignKey(contact_detalis,null=True, blank=True , on_delete=models.PROTECT)
+    contactPerson = models.ForeignKey(ContactDetalis, null=True, blank=True, on_delete=models.PROTECT)
     """Billing Details"""
     Currency = models.ForeignKey(CurrencyMaster, null=True, blank=True, on_delete=models.PROTECT)
     """Item Details"""
@@ -1007,7 +1039,6 @@ class RawMaterial(models.Model):
     UpdatedAt = models.DateTimeField(auto_now=True)
 
 
-#
 class Scrap(models.Model):
     SerialNo = models.IntegerField()
     ItemMaster = models.ForeignKey(ItemMaster, on_delete=models.PROTECT, null=True, blank=True)

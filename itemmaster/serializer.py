@@ -143,19 +143,19 @@ class SupplierGroupsSerializer(serializers.ModelSerializer):
 
 class ItemContactSerializer(serializers.ModelSerializer):
     class Meta:
-        model = contact_detalis
+        model = ContactDetalis
         fields = "__all__"
 
 
 class ItemAddressSerializer(serializers.ModelSerializer):
     class Meta:
-        model = company_address
+        model = CompanyAddress
         fields = "__all__"
 
 
 class ItemSupplierSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Supplier_Form_Data
+        model = SupplierFormData
         fields = "__all__"
 
     # def validate_Legal_Name(self, value):

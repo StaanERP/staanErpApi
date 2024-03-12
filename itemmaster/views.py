@@ -77,7 +77,7 @@ class EditListViewDetails(APIView):
 
 class HsnCreateView(APIView):
     def get(self, request):
-        article = Hsn.objects.all().order_by('-id').filter(isDelete=False)
+        article = Hsn.objects.all().order_by('-id').filter(is_delete=False)
 
         serialzer = HsnSerializer(article, many=True)
 
@@ -132,7 +132,7 @@ class HsnDetails(APIView):
 
 class ItemGroupCreateView(APIView):
     def get(self, request):
-        article = Item_Groups_Name.objects.all().order_by('-id').filter(isDelete=False)
+        article = Item_Groups_Name.objects.all().order_by('-id').filter(is_delete=False)
         serialzer = ItemGroupSerializer(article, many=True)
         return Response(serialzer.data)
 
@@ -185,7 +185,7 @@ class ItemGroupDetails(APIView):
 
 class UOMCreateView(APIView):
     def get(self, request):
-        article = UOM.objects.all().order_by('-id').filter(isDelete=False)
+        article = UOM.objects.all().order_by('-id').filter(is_delete=False)
         serialzer = UOMSerializer(article, many=True)
         return Response(serialzer.data)
 
@@ -255,7 +255,7 @@ class CategoryCreateView(APIView):
 
 class AccountsGroupCreateView(APIView):
     def get(self, request):
-        article = AccountsGroup.objects.all().order_by('-id').filter(isDelete=False)
+        article = AccountsGroup.objects.all().order_by('-id').filter(is_delete=False)
         serialzer = AccountsGroupSerializer(article, many=True)
         return Response(serialzer.data)
 
@@ -307,7 +307,7 @@ class AccountsGroupDetails(APIView):
 
 class AccountsMasterCreateView(APIView):
     def get(self, request):
-        article = AccountsMaster.objects.all().order_by('-id').filter(isDelete=False)
+        article = AccountsMaster.objects.all().order_by('-id').filter(is_delete=False)
         serialzer = AccountsMasterSerializer(article, many=True)
         return Response(serialzer.data)
 
@@ -467,7 +467,7 @@ class ItemMasterDetails(APIView):
 
 class StoreCreateView(APIView):
     def get(self, request):
-        article = Store.objects.all().order_by('-id').filter(isDelete=False)
+        article = Store.objects.all().order_by('-id').filter(is_delete=False)
         serialzer = StoreSerializer(article, many=True)
         return Response(serialzer.data)
 
@@ -992,7 +992,7 @@ class SupplierGroupDetails(APIView):
 
 class ItemContactCreateView(APIView):
     def get(self, request):
-        article = contact_detalis.objects.all().order_by('-id')
+        article = ContactDetalis.objects.all().order_by('-id')
         serialzer = ItemContactSerializer(article, many=True)
         return Response(serialzer.data)
 
@@ -1007,7 +1007,7 @@ class ItemContactCreateView(APIView):
 class ItemContactDetails(APIView):
     def get_object(self, pk):
         try:
-            return contact_detalis.objects.get(pk=pk)
+            return ContactDetalis.objects.get(pk=pk)
         except Exception as e:
             return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
 
@@ -1044,7 +1044,7 @@ class ItemContactDetails(APIView):
 
 class ItemAddressCreateView(APIView):
     def get(self, request):
-        article = company_address.objects.all().order_by('-id')
+        article = CompanyAddress.objects.all().order_by('-id')
         serialzer = ItemAddressSerializer(article, many=True)
         return Response(serialzer.data)
 
@@ -1059,7 +1059,7 @@ class ItemAddressCreateView(APIView):
 class ItemAddressDetails(APIView):
     def get_object(self, pk):
         try:
-            return company_address.objects.get(pk=pk)
+            return CompanyAddress.objects.get(pk=pk)
         except Exception as e:
             return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
 
@@ -1097,7 +1097,7 @@ class ItemAddressDetails(APIView):
 class ItemSupplierFormCreateView(APIView):
 
     def get(self, request):
-        articles = Supplier_Form_Data.objects.all().order_by('-id')
+        articles = SupplierFormData.objects.all().order_by('-id')
         serializer = ItemSupplierSerializer(articles, many=True)
         return Response(serializer.data)
 
@@ -1123,7 +1123,7 @@ class ItemSupplierFormCreateView(APIView):
 class ItemSupplierFormDetails(APIView):
     def get_object(self, pk):
         try:
-            return Supplier_Form_Data.objects.get(pk=pk)
+            return SupplierFormData.objects.get(pk=pk)
         except Exception as e:
             return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
 
@@ -1477,7 +1477,7 @@ class NumberingSeriesCreateView(APIView):
 
     def post(self, request):
         """In same resource, only one item allowed to be true. make others false"""
-        for singleSeries in NumberingSeries.objects.all().filter(isDelete=False).filter(
+        for singleSeries in NumberingSeries.objects.all().filter(is_delete=False).filter(
                 Resource=request.data['Resource']):
             if singleSeries.Resource == "Pos":
                 if singleSeries.ReSourceIsPosType == "Sample":
@@ -1489,7 +1489,7 @@ class NumberingSeriesCreateView(APIView):
                         singleSeries.Default = False
                         singleSeries.save()
         """after change send all data"""
-        article = NumberingSeries.objects.all().order_by('-id').filter(isDelete=False)
+        article = NumberingSeries.objects.all().order_by('-id').filter(is_delete=False)
         Change_Data = NumberingSeriesSerializer(article, many=True)
         serializer = NumberingSeriesSerializer(data=request.data)
 
