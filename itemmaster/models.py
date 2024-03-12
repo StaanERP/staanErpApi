@@ -600,8 +600,8 @@ class Item_Indicator(models.Model):
 
 
 class ItemMaster(models.Model):
-    item_part_code = models.CharField(unique=True, max_length=40)
-    item_name = models.CharField(unique=True, max_length=100)
+    item_part_code = models.CharField(unique=True, max_length=40, db_index=True)
+    item_name = models.CharField(unique=True, max_length=100, db_index=True)
     description = models.TextField(max_length=300, null=True, blank=True)
     item_types = models.ForeignKey(ItemType, on_delete=models.PROTECT, null=True, blank=True)
     item_uom = models.ForeignKey(UOM, related_name="unit", on_delete=models.PROTECT, null=True, blank=True)
